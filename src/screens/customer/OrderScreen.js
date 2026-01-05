@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; // Đã bỏ 'use' thừa
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -20,12 +20,11 @@ import {
   query,
   where,
   onSnapshot,
-  // namedQuery, // Loại bỏ namedQuery nếu không dùng
+ 
 } from "firebase/firestore";
 import app from "../../sever/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-//phương thức thanh toán
 const Option = ({ name, selected, onSelect, image }) => {
   return (
     <TouchableOpacity
@@ -78,7 +77,6 @@ const OptionSelector = ({ label, selectedValue, onSelect }) => {
 };
 
 const ReviewItem = ({ review }) => {
-  // Đảm bảo review.createdAt là một timestamp hoặc Firestore Timestamp
   const reviewDate = review.createdAt?.toDate ? new Date(review.createdAt.toDate()) : (review.createdAt ? new Date(review.createdAt) : null);
 
   return (
@@ -119,20 +117,18 @@ const OrderScreen = () => {
   const [review, setReview] = useState("");
   const [reviews, setReviews] = useState([]);
 
-  // THAY THẾ 'userName' và thêm 'userId' để lấy thông tin từ AsyncStorage
+  
   const [loggedInUserName, setLoggedInUserName] = useState("Khách hàng");
   const [loggedInUserId, setLoggedInUserId] = useState(null);
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
-  // Load thông tin người dùng từ AsyncStorage khi component mount
   useEffect(() => {
     const loadUserData = async () => {
       try {
         const userDataString = await AsyncStorage.getItem("userData");
         if (userDataString) {
           const parsedUserData = JSON.parse(userDataString);
-          // Đảm bảo lấy 'fullname' nếu có, fallback về 'name' hoặc 'Khách hàng'
           setLoggedInUserName(parsedUserData.fullname || parsedUserData.name || "Khách hàng");
           setLoggedInUserId(parsedUserData.id || null);
         } else {
@@ -148,14 +144,14 @@ const OrderScreen = () => {
     loadUserData();
   }, []);
 
-  //cập nhập để xử lý khi từ giỏ hàng chuyển sang
+
   useEffect(() => {
     const fetchDrinkDetails = async () => {
       try {
         const db = getFirestore(app);
         let currentDrink = null;
 
-        // Nếu có cartItem từ giỏ hàng thì sử dụng thông tin đó
+    
         if (route.params?.cartItem) {
           const { cartItem } = route.params;
           setQuantity(cartItem.quantity);
@@ -171,9 +167,9 @@ const OrderScreen = () => {
           } else {
             Alert.alert("Lỗi", "Không tìm thấy đồ uống trong CSDL!");
             navigation.goBack();
-            return; // Thoát sớm nếu không tìm thấy đồ uống
+            return; 
           }
-        } else if (drinkId) { // Nếu không phải từ giỏ hàng thì load như bình thường bằng drinkId
+        } else if (drinkId) { 
           const drinkRef = doc(db, "douong", drinkId.toString());
           const drinkSnap = await getDoc(drinkRef);
 
@@ -183,15 +179,14 @@ const OrderScreen = () => {
           } else {
             Alert.alert("Lỗi", "Không tìm thấy đồ uống trong CSDL!");
             navigation.goBack();
-            return; // Thoát sớm nếu không tìm thấy đồ uống
+            return; 
           }
         } else {
             Alert.alert("Lỗi", "Không có thông tin đồ uống để hiển thị.");
             navigation.goBack();
-            return; // Thoát sớm nếu không có drinkId và cartItem
+            return; 
         }
 
-        // Sau khi đã có currentDrink, tải reviews
         if (currentDrink) {
           const unsubscribe = loadReviews(currentDrink.id);
           return () => unsubscribe();
@@ -209,10 +204,10 @@ const OrderScreen = () => {
   }, [drinkId, route.params?.cartItem]);
 
 
-  const loadReviews = (id) => { // Đổi tên tham số để tránh nhầm lẫn với drinkId của component
+  const loadReviews = (id) => { 
     const db = getFirestore(app);
     const reviewsRef = collection(db, "reviews");
-    const q = query(reviewsRef, where("drinkId", "==", id)); // Sử dụng id được truyền vào
+    const q = query(reviewsRef, where("drinkId", "==", id)); 
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const reviewsData = [];
@@ -225,16 +220,15 @@ const OrderScreen = () => {
     return unsubscribe;
   };
 
-  // Thay đổi hàm handleOrderNow trong OrderScreen.js
   const handleOrderNow = async () => {
     try {
-      // Kiểm tra xem người dùng đã đăng nhập chưa
+ 
       if (!loggedInUserName || loggedInUserName === "Khách hàng" || !loggedInUserId) {
         Alert.alert("Thông báo", "Vui lòng đăng nhập để đặt hàng.");
         return;
       }
 
-      // Đảm bảo drink đã được tải
+     
       if (!drink) {
         Alert.alert("Lỗi", "Thông tin đồ uống chưa được tải.");
         return;
@@ -244,7 +238,7 @@ const OrderScreen = () => {
       const ordersRef = collection(db, "orders");
 
       const newOrder = {
-        userId: loggedInUserId, // Sử dụng userId từ state đã load
+        userId: loggedInUserId, 
         items: [
           {
             id: drink.id,
@@ -260,17 +254,17 @@ const OrderScreen = () => {
           },
         ],
         status: "Đang xử lý",
-        createdAt: new Date().getTime(), // Lưu timestamp để dễ sắp xếp
+        createdAt: new Date().getTime(),
         updatedAt: new Date().getTime(),
         total: parseInt(drink.price) * quantity,
-        userName: loggedInUserName, // Sử dụng userName từ state đã load
+        userName: loggedInUserName,
       };
 
-      // Lưu vào Firestore
+    
       const docRef = await addDoc(ordersRef, newOrder);
       console.log("Order saved to Firestore with ID: ", docRef.id);
 
-      // Nếu từ giỏ hàng thì xóa sản phẩm đó khỏi giỏ hàng
+      
       if (route.params?.fromCart) {
         const currentCart = await AsyncStorage.getItem("cart");
         let cart = currentCart ? JSON.parse(currentCart) : [];
@@ -279,7 +273,7 @@ const OrderScreen = () => {
         console.log(`Đã xóa mục ${drink.drinkname} khỏi giỏ hàng.`);
       }
 
-      // Hiển thị thông báo và chuyển hướng
+      
       Alert.alert("Thành công", "Đơn hàng đã được đặt thành công!", [
         {
           text: "Xem đơn hàng",
@@ -287,7 +281,7 @@ const OrderScreen = () => {
             navigation.navigate("CartTab", {
               screen: "Cart",
               params: {
-                activeTab: "orders", // Đặt tab orders là active
+                activeTab: "orders", 
               },
             });
           },
@@ -314,7 +308,7 @@ const OrderScreen = () => {
       return;
     }
 
-    // Kiểm tra xem người dùng đã đăng nhập chưa
+   
     if (!loggedInUserName || loggedInUserName === "Khách hàng") {
         Alert.alert("Thông báo", "Vui lòng đăng nhập để gửi đánh giá.");
         return;
@@ -327,7 +321,7 @@ const OrderScreen = () => {
       await addDoc(reviewsRef, {
         drinkId: drink.id,
         drinkName: drink.drinkname,
-        userName: loggedInUserName, // Sử dụng userName từ state đã load
+        userName: loggedInUserName, 
         rating: rating,
         comment: review,
         createdAt: new Date(),
@@ -362,10 +356,9 @@ const OrderScreen = () => {
       </View>
     );
   }
-  //các phương thức thanh toán
   const paymentMethods = [
     {
-      id: "cash", // Đổi 'sash' thành 'cash' để khớp với logic của bạn
+      id: "cash", 
       name: "Tiền mặt",
     },
     {
@@ -417,7 +410,6 @@ const OrderScreen = () => {
           </View>
         </View>
         <View style={styles.paymentContainer}>
-          {/* chọn phương thức thanh toán */}
           <Text style={styles.paymentTitle}>Thanh Toán</Text>
           {paymentMethods.map((method) => (
             <Option

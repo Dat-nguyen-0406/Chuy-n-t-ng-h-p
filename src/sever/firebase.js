@@ -18,7 +18,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-// 💡 Khởi tạo auth nếu chưa tồn tại
 let auth;
 try {
   auth = initializeAuth(app, {

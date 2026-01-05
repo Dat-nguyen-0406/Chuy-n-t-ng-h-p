@@ -13,14 +13,13 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
-import { getFirestore, collection, query, orderBy, onSnapshot } from 'firebase/firestore'; // Removed getDocs, where
-import app from '../../sever/firebase'; // Điều chỉnh đường dẫn đến file firebase.js của bạn
-
+import { getFirestore, collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import app from '../../sever/firebase'; 
 const OrdersScreen = ({ navigation }) => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'Đang xử lý', 'Đang giao', 'Đã hoàn thành', 'Đã hủy'
+  const [statusFilter, setStatusFilter] = useState('all'); 
   const [searchQuery, setSearchQuery] = useState('');
   const isFocused = useIsFocused();
 
@@ -31,34 +30,27 @@ const OrdersScreen = ({ navigation }) => {
     if (isFocused) {
       setIsLoading(true);
       const ordersRef = collection(db, 'orders');
-      
-      // Lắng nghe thay đổi theo thời gian thực với onSnapshot
-      // Sắp xếp đơn hàng theo thời gian tạo mới nhất
       const q = query(ordersRef, orderBy('createdAt', 'desc'));
 
       unsubscribe = onSnapshot(q, (querySnapshot) => {
         const ordersData = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Chuyển đổi timestamp của Firebase sang số milliseconds nếu có
           const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
             ? data.createdAt.toDate().getTime()
-            : (data.createdAt || new Date().getTime()); // Fallback if createdAt is missing or not a timestamp
-
+            : (data.createdAt || new Date().getTime()); 
+          
           ordersData.push({
             id: doc.id,
             ...data,
-            createdAt: createdAt, // Đảm bảo createdAt là số
-            customer: data.userName || 'Khách hàng', // Dùng userName nếu có, không thì mặc định
-            phone: data.phone || 'N/A', // Thêm trường userPhone nếu có
-            items: data.items || [], // Đảm bảo có mảng items
-            // Map status from Firestore to display text
-            // Assuming Firestore statuses are like "Đang xử lý", "Đang giao", "Đã hoàn thành", "Đã hủy"
+            createdAt: createdAt, 
+            customer: data.userName || 'Khách hàng',
+            phone: data.phone || 'N/A',
+            items: data.items || [],          
             status: data.status || 'Không xác định',
           });
         });
         setOrders(ordersData);
-        // filterAndSearchOrders sẽ được gọi tự động nhờ useEffect thứ 2 khi orders thay đổi
         setIsLoading(false);
       }, (error) => {
         console.error("Lỗi khi tải đơn hàng:", error);
@@ -66,7 +58,7 @@ const OrdersScreen = ({ navigation }) => {
         setIsLoading(false);
       });
     }
-    // Cleanup subscription on component unmount or when not focused
+    
     return () => {
       if (unsubscribe) {
         unsubscribe();
@@ -76,17 +68,16 @@ const OrdersScreen = ({ navigation }) => {
 
   useEffect(() => {
     filterAndSearchOrders(orders, statusFilter, searchQuery);
-  }, [orders, statusFilter, searchQuery]); // Lọc lại khi orders, statusFilter, hoặc searchQuery thay đổi
+  }, [orders, statusFilter, searchQuery]); 
 
   const filterAndSearchOrders = (allOrders, currentStatusFilter, currentSearchQuery) => {
     let tempOrders = allOrders;
 
-    // Filter by status if not 'all'
     if (currentStatusFilter !== 'all') {
       tempOrders = tempOrders.filter(order => order.status === currentStatusFilter);
     }
 
-    // Filter by search query
+   
     if (currentSearchQuery.trim() !== '') {
       const lowercasedSearchText = currentSearchQuery.toLowerCase();
       tempOrders = tempOrders.filter(
@@ -102,11 +93,11 @@ const OrdersScreen = ({ navigation }) => {
 
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'Đã hoàn thành': return { backgroundColor: '#4CAF50', color: '#fff' }; // Green
-      case 'Đang giao': return { backgroundColor: '#2196F3', color: '#fff' }; // Blue
-      case 'Đang xử lý': return { backgroundColor: '#FF9800', color: '#fff' }; // Orange
-      case 'Đã hủy': return { backgroundColor: '#F44336', color: '#fff' }; // Red
-      default: return { backgroundColor: '#757575', color: '#fff' }; // Grey
+      case 'Đã hoàn thành': return { backgroundColor: '#4CAF50', color: '#fff' }; 
+      case 'Đang giao': return { backgroundColor: '#2196F3', color: '#fff' }; 
+      case 'Đang xử lý': return { backgroundColor: '#FF9800', color: '#fff' }; 
+      case 'Đã hủy': return { backgroundColor: '#F44336', color: '#fff' }; 
+      default: return { backgroundColor: '#757575', color: '#fff' }; 
     }
   };
 
@@ -114,14 +105,14 @@ const OrdersScreen = ({ navigation }) => {
     <TouchableOpacity
       style={[
         styles.statusTab,
-        statusFilter === status && styles.activeStatusTab // Apply active style
+        statusFilter === status && styles.activeStatusTab
       ]}
       onPress={() => setStatusFilter(status)}
     >
       <Text
         style={[
           styles.statusTabText,
-          statusFilter === status && styles.activeStatusTabText // Apply active text style
+          statusFilter === status && styles.activeStatusTabText
         ]}
       >
         {label}
@@ -255,31 +246,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
-    overflow: 'hidden', // Ensure borderRadius works correctly
+    overflow: 'hidden',
   },
   statusTab: {
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
-    borderBottomWidth: 2, // Retain border for consistency with active tab
-    borderBottomColor: 'transparent', // Default transparent
+    borderBottomWidth: 2, 
+    borderBottomColor: 'transparent', 
   },
   activeStatusTab: {
-    borderBottomColor: '#6F4E37', // Active tab bottom border color
+    borderBottomColor: '#6F4E37',
   },
   statusTabText: {
-    fontSize: 13, // Slightly smaller font for more tabs
+    fontSize: 13, 
     color: '#666',
     fontWeight: '500',
     textAlign: 'center',
   },
   activeStatusTabText: {
-    color: '#6F4E37', // Active tab text color
+    color: '#6F4E37', 
     fontWeight: 'bold',
   },
   list: {
     paddingHorizontal: 16,
-    paddingBottom: 20, // Add padding for bottom
+    paddingBottom: 20, 
   },
   orderItem: {
     backgroundColor: 'white',
@@ -310,7 +301,7 @@ const styles = StyleSheet.create({
   },
   orderStatusText: {
     fontSize: 12,
-    color: 'white', // Default color, will be overridden by getStatusStyle
+    color: 'white', 
     fontWeight: '500',
   },
   orderInfo: {
@@ -340,7 +331,7 @@ const styles = StyleSheet.create({
   orderDetails: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#6F4E37', // Updated color
+    color: '#6F4E37', 
   },
   emptyContainer: {
     flex: 1,

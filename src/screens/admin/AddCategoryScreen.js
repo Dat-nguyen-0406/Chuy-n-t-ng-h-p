@@ -10,17 +10,16 @@ import {
   ActivityIndicator,
   Switch
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-// Import Firestore functions
-import { getFirestore, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import app from '../../sever/firebase'; // Đảm bảo đường dẫn này đúng
+
+import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import app from '../../sever/firebase'; 
 
 const db = getFirestore(app);
 
 const AddCategoryScreen = ({ navigation }) => {
   const [categoryName, setCategoryName] = useState('');
-  const [isActive, setIsActive] = useState(true); // Mặc định là active khi thêm mới
+  const [isActive, setIsActive] = useState(true); 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddCategory = async () => {
@@ -28,27 +27,20 @@ const AddCategoryScreen = ({ navigation }) => {
       Alert.alert('Lỗi', 'Vui lòng nhập tên danh mục');
       return;
     }
-
     setIsSubmitting(true);
     try {
       console.log("AddCategoryScreen: Đang cố gắng thêm danh mục mới với tên:", categoryName.trim(), "và trạng thái active:", isActive);
-
-      // Tạo ID ngẫu nhiên theo yêu cầu của bạn (nhưng vẫn khuyến nghị dùng docRef.id)
       const customId = Math.random().toString(36).substring(4, 15);
-
       const docRef = await addDoc(collection(db, "danhmuc"), {
-        categoryName: categoryName.trim(), // <--- Giữ nguyên categoryName theo yêu cầu của bạn
-        id: customId, // <--- Giữ nguyên ID tự tạo theo yêu cầu của bạn
-       // Thêm thời gian cập nhật
+        categoryName: categoryName.trim(),
+        id: customId, 
       });
-
       console.log("AddCategoryScreen: Thêm danh mục thành công vào Firestore. ID tài liệu mới (Firestore generated):", docRef.id);
       console.log("AddCategoryScreen: ID tùy chỉnh được lưu trong tài liệu:", customId);
-
       Alert.alert('Thành công', 'Đã thêm danh mục mới vào Firebase!', [
         {
           text: 'OK',
-          onPress: () => navigation.goBack() // Quay lại màn hình danh sách sau khi thêm
+          onPress: () => navigation.goBack()
         }
       ]);
     } catch (error) {
@@ -71,9 +63,8 @@ const AddCategoryScreen = ({ navigation }) => {
         placeholder="Nhập tên danh mục"
         value={categoryName}
         onChangeText={setCategoryName}
-        editable={!isSubmitting} // Không cho chỉnh sửa khi đang submit
-        // Đảm bảo TextInput hỗ trợ tiếng Việt, thường là mặc định
-        // Nếu không, hãy kiểm tra cài đặt bàn phím trên thiết bị/emulator.
+        editable={!isSubmitting}
+       
       />
 
       <View style={styles.switchContainer}>
@@ -83,7 +74,7 @@ const AddCategoryScreen = ({ navigation }) => {
           thumbColor={isActive ? "#ffffff" : "#f4f3f4"}
           onValueChange={setIsActive}
           value={isActive}
-          disabled={isSubmitting} // Không cho chỉnh sửa khi đang submit
+          disabled={isSubmitting} 
         />
       </View>
 

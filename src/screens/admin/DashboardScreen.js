@@ -13,12 +13,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { clearAllStorage } from "../../utils/storage";
-
-// Import Firestore modules
 import { getFirestore, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
-import { app } from "../../sever/firebase"; // Đảm bảo đường dẫn đúng
+import { app } from "../../sever/firebase"; 
 
-const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn muốn điều hướng từ đây
+const DashboardScreen = ({ navigation }) => { 
   const { logout } = useAuth();
   const [stats, setStats] = useState({
     todayOrders: 0,
@@ -27,7 +25,7 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
     weeklyRevenue: 0,
     monthlyOrders: 0,
     monthlyRevenue: 0,
-    popularDrinks: [], // Placeholder, cần logic để tính toán từ Firestore
+    popularDrinks: [], 
     recentOrders: [],
   });
   const [loading, setLoading] = useState(true);
@@ -35,18 +33,15 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
    useFocusEffect(
     useCallback(() => {
       console.log("DashboardScreen được focus, tải lại dữ liệu ban đầu và thiết lập interval.");
-      fetchDashboardData(); // Tải dữ liệu ngay khi màn hình được focus
-
-      // Thiết lập interval để tự động cập nhật định kỳ (ví dụ: mỗi 1 phút)
+      fetchDashboardData(); 
+      
       const intervalId = setInterval(() => {
         console.log("Tự động cập nhật dữ liệu dashboard định kỳ...");
         fetchDashboardData();
-      }, 60000); // 60000 ms = 1 phút
-
-      // Cleanup function
+      }, 60000);
       return () => {
         console.log("DashboardScreen bị blur hoặc unmount, xóa interval.");
-        clearInterval(intervalId); // Xóa interval khi màn hình không còn focus
+        clearInterval(intervalId); 
       };
     }, [])
   );
@@ -58,21 +53,16 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
     setLoading(true);
     setError(null);
     try {
-      const db = getFirestore(app);
-
-      // --- Date Range Calculations ---
+      const db = getFirestore(app); 
       const now = new Date();
-      // Reset time to start of day for comparison to avoid time-of-day issues
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-      // Today's range
       const todayStart = new Date(today);
+
       const todayEnd = new Date(today);
       todayEnd.setHours(23, 59, 59, 999);
 
-      // Week's range (Monday to Sunday)
-      const dayOfWeek = today.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
-      // Calculate the date of the Monday of the current week
+      const dayOfWeek = today.getDay(); 
+     
       const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
       const weekStart = new Date(today.setDate(diffToMonday));
       weekStart.setHours(0, 0, 0, 0);
@@ -80,16 +70,15 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
 
-      // Month's range
+ 
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       monthStart.setHours(0, 0, 0, 0);
-      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Last day of current month
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0); 
       monthEnd.setHours(23, 59, 59, 999);
 
-      // --- Fetch Orders for Statistics ---
-      // Fetch all orders (or a sufficiently large range, e.g., last 30-60 days to be safe for monthly stats)
+      
       const ordersRef = collection(db, "orders");
-      const allOrdersQuery = query(ordersRef, orderBy("createdAt", "desc")); // Fetch all, then filter in memory
+      const allOrdersQuery = query(ordersRef, orderBy("createdAt", "desc")); 
       const allOrdersSnapshot = await getDocs(allOrdersQuery);
 
       let calculatedTodayOrders = 0;
@@ -102,35 +91,31 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
 
       allOrdersSnapshot.forEach((doc) => {
         const data = doc.data();
-        // Convert Firestore Timestamp to JavaScript Date object
+
         const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
           ? data.createdAt.toDate()
-          : (data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt)); // Handle if already a Date or number timestamp
+          : (data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt));
 
-        // Only consider completed orders for revenue calculation
         if (data.status === 'Đã hoàn thành') {
-          const orderTotal = parseFloat(data.total) || 0; // Ensure total is a number
+          const orderTotal = parseFloat(data.total) || 0; 
 
-          // Check for Today's stats
+
           if (createdAt >= todayStart && createdAt <= todayEnd) {
             calculatedTodayOrders++;
             calculatedTodayRevenue += orderTotal;
           }
 
-          // Check for Weekly stats
           if (createdAt >= weekStart && createdAt <= weekEnd) {
             calculatedWeeklyOrders++;
             calculatedWeeklyRevenue += orderTotal;
           }
 
-          // Check for Monthly stats
           if (createdAt.getMonth() === monthStart.getMonth() && createdAt.getFullYear() === monthStart.getFullYear()) {
             calculatedMonthlyOrders++;
             calculatedMonthlyRevenue += orderTotal;
           }
         }
 
-        // Add to recent orders (up to 5, regardless of status)
         if (fetchedRecentOrders.length < 5) {
             fetchedRecentOrders.push({
                 id: doc.id,
@@ -173,26 +158,26 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
           onPress: async () => {
             await logout();
             await clearAllStorage();
-            navigation.replace("Login"); // Chuyển về màn hình đăng nhập
+            navigation.replace("Login"); 
           },
         },
       ]
     );
   };
 
-  // Helper function to get status styles for orders
+ 
   const getOrderStatusStyle = (status) => {
     switch (status) {
       case 'Đã hoàn thành':
-        return { backgroundColor: '#4CAF50', color: '#fff' }; // Green
+        return { backgroundColor: '#4CAF50', color: '#fff' }; 
       case 'Đang giao':
-        return { backgroundColor: '#2196F3', color: '#fff' }; // Blue
+        return { backgroundColor: '#2196F3', color: '#fff' }; 
       case 'Đang xử lý':
-        return { backgroundColor: '#FF9800', color: '#fff' }; // Orange for processing
+        return { backgroundColor: '#FF9800', color: '#fff' }; 
       case 'Đã hủy':
-        return { backgroundColor: '#F44336', color: '#fff' }; // Red
+        return { backgroundColor: '#F44336', color: '#fff' }; 
       default:
-        return { backgroundColor: '#757575', color: '#fff' }; // Grey
+        return { backgroundColor: '#757575', color: '#fff' };
     }
   };
 
@@ -218,15 +203,12 @@ const DashboardScreen = ({ navigation }) => { // Thêm navigation nếu bạn mu
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Doanh thu</Text>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Ionicons name="log-out-outline" size={24} color="#8B4513" />
         </TouchableOpacity>
       </View>
-
-      {/* Overview Stats */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statLabel}>Đơn hàng hôm nay</Text>
@@ -339,7 +321,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    paddingTop: Platform.OS === 'android' ? 40 : 20, // Adjust for status bar
+    paddingTop: Platform.OS === 'android' ? 40 : 20, 
   },
   headerTitle: {
     fontSize: 22,
@@ -399,7 +381,7 @@ const styles = StyleSheet.create({
   popularDrinksContainer: {
     paddingHorizontal: 16,
     backgroundColor: '#fff',
-    paddingBottom: 5, // Add some padding
+    paddingBottom: 5, 
   },
   popularDrinkItem: {
     flexDirection: "row",
@@ -412,7 +394,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#6F4E37", // Coffee color
+    backgroundColor: "#6F4E37",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -424,7 +406,7 @@ const styles = StyleSheet.create({
   recentOrdersContainer: {
     paddingHorizontal: 16,
     backgroundColor: '#fff',
-    paddingBottom: 5, // Add some padding
+    paddingBottom: 5,
   },
   orderItem: {
     paddingVertical: 12,
@@ -460,7 +442,7 @@ const styles = StyleSheet.create({
   orderTotal: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#8B4513", // Coffee color
+    color: "#8B4513", 
     marginBottom: 4,
   },
   orderTime: {

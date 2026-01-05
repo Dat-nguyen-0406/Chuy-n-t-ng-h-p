@@ -11,17 +11,15 @@ import {
   Image,
   Alert,
   ActivityIndicator,
-  Switch // Đảm bảo đã import Switch nếu bạn định dùng cho active status
+  Switch 
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from 'expo-image-picker';
 import { v4 as uuidv4 } from 'uuid';
-
-// Import Firebase functions
 import { getFirestore, collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import app from '../../sever/firebase'; // Đảm bảo đường dẫn này đúng
+import app from '../../sever/firebase'; 
 
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -32,23 +30,23 @@ const AddDrinkScreen = ({ navigation }) => {
   const [description, setDescription] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
-  const [image, setImage] = useState(null); // Lưu URI ảnh từ ImagePicker
-  const [imageUrlInput, setImageUrlInput] = useState(""); // State mới để lưu URL ảnh nhập tay
+  const [image, setImage] = useState(null);
+  const [imageUrlInput, setImageUrlInput] = useState("");
   const [categories, setCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imageUploadLoading, setImageUploadLoading] = useState(false);
   const [quatiy, setQuatiy] = useState("");
   const [start, setStart] = useState("");
   const [status, setStatus] = useState("");
-  const [active, setActive] = useState(true); // Mặc định là active
+  const [active, setActive] = useState(true); 
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "danhmuc")); // Lấy danh mục từ collection 'danhmuc'
+        const querySnapshot = await getDocs(collection(db, "danhmuc"));
         const fetchedCategories = querySnapshot.docs.map(doc => ({
           id: doc.id,
-          name: doc.data().categoryName // Giả định trường tên là 'name'
+          name: doc.data().categoryName
         }));
         setCategories(fetchedCategories);
         if (fetchedCategories.length > 0) {
@@ -65,7 +63,7 @@ const AddDrinkScreen = ({ navigation }) => {
   }, []);
 
   const pickImage = async () => {
-    // Yêu cầu quyền truy cập thư viện ảnh
+  
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Quyền truy cập bị từ chối', 'Chúng tôi cần quyền truy cập thư viện ảnh để chọn ảnh.');
@@ -81,7 +79,7 @@ const AddDrinkScreen = ({ navigation }) => {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
-      setImageUrlInput(''); // Xóa URL nhập tay nếu chọn ảnh từ thư viện
+      setImageUrlInput(''); 
     }
   };
 
@@ -111,15 +109,11 @@ const AddDrinkScreen = ({ navigation }) => {
     }
 
     let finalImageUrl = '';
-
-    // Ưu tiên URL nhập tay nếu có
     if (imageUrlInput.trim()) {
       finalImageUrl = imageUrlInput.trim();
     } else if (image) {
-      // Nếu có ảnh từ ImagePicker, tiến hành upload
       finalImageUrl = await uploadImage(image);
       if (!finalImageUrl) {
-        // Nếu upload thất bại, dừng lại
         return;
       }
     } else {
@@ -129,31 +123,30 @@ const AddDrinkScreen = ({ navigation }) => {
 
     setIsSubmitting(true);
     try {
-      await addDoc(collection(db, "douong"), { // Đảm bảo collection là 'douong'
+      await addDoc(collection(db, "douong"), { 
         drinkname: name,
         price: parseFloat(price),
         description: description,
-        category: selectedCategoryName, // Lưu tên danh mục
-        categoryId: selectedCategoryId, // Lưu ID danh mục
+        category: selectedCategoryName,
+        categoryId: selectedCategoryId, 
         image: finalImageUrl,
         quatiy: parseInt(quatiy),
         start: parseFloat(start),
         status: status,
-        active: active, // Lưu trạng thái active
+        active: active,
         createdAt: serverTimestamp(),
       });
 
       Alert.alert("Thành công", "Đã thêm đồ uống mới!", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
-      // Reset form (tùy chọn)
       setName("");
       setPrice("");
       setDescription("");
       setSelectedCategoryId(categories.length > 0 ? categories[0].id : "");
       setSelectedCategoryName(categories.length > 0 ? categories[0].name : "");
       setImage(null);
-      setImageUrlInput(""); // Reset URL nhập tay
+      setImageUrlInput(""); 
       setQuatiy("");
       setStart("");
       setStatus("");
@@ -183,7 +176,6 @@ const AddDrinkScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* Cách 1: Chọn ảnh từ thư viện */}
       <TouchableOpacity style={styles.uploadButton} onPress={pickImage} disabled={imageUploadLoading}>
         <Ionicons name="images-outline" size={20} color="white" />
         <Text style={styles.uploadButtonText}>Chọn ảnh từ thư viện</Text>
@@ -191,7 +183,6 @@ const AddDrinkScreen = ({ navigation }) => {
 
       <Text style={styles.orText}>HOẶC</Text>
 
-      {/* Cách 2: Nhập địa chỉ ảnh (URL) */}
       <View style={styles.formGroup}>
         <Text style={styles.label}>Địa chỉ ảnh (URL):</Text>
         <TextInput
@@ -200,7 +191,7 @@ const AddDrinkScreen = ({ navigation }) => {
           onChangeText={(text) => {
             setImageUrlInput(text);
             if (text.trim() !== '') {
-              setImage(null); // Xóa ảnh đã chọn từ thư viện nếu nhập URL
+              setImage(null); 
             }
           }}
           placeholder="Dán URL ảnh vào đây"

@@ -27,7 +27,7 @@ const ProfileDetail = () => {
     fullname: "",
     email: "",
     phone: "",
-    password: "", // Vẫn giữ để kiểm tra, nhưng nên xem xét loại bỏ sau khi debug
+    password: "", 
   });
   const [editMode, setEditMode] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -40,26 +40,25 @@ const ProfileDetail = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("--- Bắt đầu tải dữ liệu người dùng từ AsyncStorage ---"); // Thêm log
+      console.log("--- Bắt đầu tải dữ liệu người dùng từ AsyncStorage ---"); 
       try {
         const userDataString = await AsyncStorage.getItem("userData");
         if (userDataString) {
           const data = JSON.parse(userDataString);
-          console.log("Dữ liệu người dùng đọc được từ AsyncStorage:", data); // Thêm log
+          console.log("Dữ liệu người dùng đọc được từ AsyncStorage:", data); 
           setUserData({
             id: data.id || "",
             fullname: data.fullname || "",
             email: data.email || "",
             phone: data.phone || "",
-            password: data.password || "", // Vẫn giữ để kiểm tra
+            password: data.password || "", 
           });
         } else {
-          console.log("Không tìm thấy dữ liệu người dùng trong AsyncStorage."); // Thêm log
+          console.log("Không tìm thấy dữ liệu người dùng trong AsyncStorage."); 
         }
       } catch (error) {
-        console.error("Lỗi khi tải dữ liệu người dùng từ AsyncStorage:", error); // Thêm log
+        console.error("Lỗi khi tải dữ liệu người dùng từ AsyncStorage:", error); 
       }
-      console.log("--- Kết thúc tải dữ liệu người dùng từ AsyncStorage ---"); // Thêm log
     };
 
     fetchUserData();
@@ -68,7 +67,7 @@ const ProfileDetail = () => {
   const handleSave = async () => {
   console.log("--- Bắt đầu xử lý Lưu thông tin ---");
   console.log("Chế độ chỉnh sửa:", editMode);
-  console.log("userData hiện tại trước khi kiểm tra:", userData); // THÊM DÒNG NÀY
+  console.log("userData hiện tại trước khi kiểm tra:", userData); 
 
   if (!userData.fullname.trim()) {
     Alert.alert("Lỗi", "Vui lòng nhập họ và tên");
@@ -82,60 +81,60 @@ const ProfileDetail = () => {
     return;
   }
 
-  // Validate user ID
-  if (!userData.id || userData.id.toString().trim() === "" || userData.id === 0) { // Thêm kiểm tra userData.id === 0
+
+  if (!userData.id || userData.id.toString().trim() === "" || userData.id === 0) { 
     Alert.alert("Lỗi", "Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
     console.log("Lỗi: userData.id không hợp lệ (trước setState isLoading):", userData.id);
     return;
   }
 
     setIsLoading(true);
-    console.log("isLoading set to true (handleSave)"); // Thêm log
+    console.log("isLoading set to true (handleSave)");
     try {
       const updateData = {
         fullname: String(userData.fullname.trim()),
         phone: String(userData.phone.trim()),
       };
 
-      console.log("Đang cố gắng cập nhật người dùng ID:", userData.id); // Thêm log
-      console.log("Dữ liệu cập nhật lên Firebase:", updateData); // Thêm log
+      console.log("Đang cố gắng cập nhật người dùng ID:", userData.id);
+      console.log("Dữ liệu cập nhật lên Firebase:", updateData); 
 
       const userDocRef = doc(db, "users", userData.id.toString());
-      console.log("Đang gửi yêu cầu updateDoc lên Firebase..."); // Thêm log
+      console.log("Đang gửi yêu cầu updateDoc lên Firebase..."); 
       await updateDoc(userDocRef, updateData);
-      console.log("updateDoc Firebase thành công."); // Thêm log
+      console.log("updateDoc Firebase thành công."); 
 
       const updatedUserData = {
         ...userData,
         fullname: userData.fullname.trim(),
         phone: userData.phone.trim(),
       };
-      console.log("Đang cập nhật userData trong AsyncStorage:", updatedUserData); // Thêm log
+      console.log("Đang cập nhật userData trong AsyncStorage:", updatedUserData);
       await AsyncStorage.setItem("userData", JSON.stringify(updatedUserData));
-      console.log("Cập nhật AsyncStorage thành công."); // Thêm log
+      console.log("Cập nhật AsyncStorage thành công."); 
 
       setUserData(updatedUserData);
       setEditMode(false);
       Alert.alert("Thành công", "Thông tin đã được cập nhật");
-      console.log("Thông tin đã được cập nhật thành công."); // Thêm log
+      console.log("Thông tin đã được cập nhật thành công.");
     } catch (error) {
-      console.error("Lỗi cập nhật thông tin người dùng:", error); // Thêm log chi tiết lỗi
-      console.error("Chi tiết lỗi:", error.message); // Thêm log chi tiết thông báo lỗi
+      console.error("Lỗi cập nhật thông tin người dùng:", error);
+      console.error("Chi tiết lỗi:", error.message); 
 
       if (error.message.includes("permission-denied")) {
         Alert.alert("Lỗi", "Không có quyền cập nhật thông tin này. Vui lòng kiểm tra quyền Firebase.");
-        console.log("Lỗi: Quyền Firebase bị từ chối."); // Thêm log
+        console.log("Lỗi: Quyền Firebase bị từ chối."); 
       } else if (error.message.includes("not-found")) {
         Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng trên Firebase. ID có thể sai.");
-        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase."); // Thêm log
+        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase."); 
       } else {
         Alert.alert("Lỗi", "Không thể cập nhật thông tin. Vui lòng thử lại. Lỗi không xác định.");
-        console.log("Lỗi: Lỗi không xác định khi cập nhật thông tin."); // Thêm log
+        console.log("Lỗi: Lỗi không xác định khi cập nhật thông tin."); 
       }
     } finally {
       setIsLoading(false);
-      console.log("isLoading set to false (handleSave)"); // Thêm log
-      console.log("--- Kết thúc xử lý Lưu thông tin ---"); // Thêm log
+      console.log("isLoading set to false (handleSave)");
+      console.log("--- Kết thúc xử lý Lưu thông tin ---"); 
     }
   };
 
@@ -158,16 +157,14 @@ const ProfileDetail = () => {
       return;
     }
 
-    // --- ĐIỀU CHỈNH QUAN TRỌNG Ở ĐÂY ---
-    // Chuyển cả hai giá trị sang chuỗi và loại bỏ khoảng trắng để so sánh chính xác
     if (String(currentPassword).trim() !== String(userData.password).trim()) {
       Alert.alert("Lỗi", "Mật khẩu hiện tại không đúng");
       console.log("Lỗi: Mật khẩu hiện tại không đúng.");
       return;
     }
 
-    // Validate user ID
-      if (!userData.id || String(userData.id).trim() === "") { // Đảm bảo ID cũng là chuỗi và không rỗng
+
+      if (!userData.id || String(userData.id).trim() === "") { 
       Alert.alert("Lỗi", "Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
       console.log("Lỗi: userData.id không hợp lệ (đổi mật khẩu):", userData.id);
       return;
@@ -177,13 +174,12 @@ const ProfileDetail = () => {
     console.log("isLoading set to true (handleChangePassword)");
     try {
       const updateData = {
-        password: String(newPassword), // Đảm bảo lưu dưới dạng chuỗi
+        password: String(newPassword), 
       };
 
       console.log("Đang cố gắng cập nhật mật khẩu cho người dùng ID:", userData.id);
       console.log("Dữ liệu mật khẩu cập nhật lên Firebase Firestore:", updateData);
 
-      // Đảm bảo userData.id được chuyển thành chuỗi trước khi sử dụng làm document ID
       const userDocRef = doc(db, "users", String(userData.id));
       console.log("Đang gửi yêu cầu updateDoc mật khẩu lên Firebase Firestore...");
       await updateDoc(userDocRef, updateData);
@@ -223,44 +219,44 @@ const ProfileDetail = () => {
   };
 
   const refreshUserDataFromFirebase = async () => {
-    console.log("--- Bắt đầu làm mới dữ liệu người dùng từ Firebase ---"); // Thêm log
+    console.log("--- Bắt đầu làm mới dữ liệu người dùng từ Firebase ---"); 
     if (!userData.id || userData.id.trim() === "") {
       Alert.alert("Lỗi", "Không tìm thấy ID người dùng để làm mới.");
-      console.log("Lỗi: userData.id không hợp lệ (làm mới):", userData.id); // Thêm log
+      console.log("Lỗi: userData.id không hợp lệ (làm mới):", userData.id); 
       return;
     }
 
     try {
-      console.log("Đang truy vấn tài liệu người dùng từ Firebase với ID:", userData.id); // Thêm log
+      console.log("Đang truy vấn tài liệu người dùng từ Firebase với ID:", userData.id); 
       const userDocRef = doc(db, "users", userData.id.toString());
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const firebaseData = userDoc.data();
-        console.log("Dữ liệu người dùng từ Firebase:", firebaseData); // Thêm log
+        console.log("Dữ liệu người dùng từ Firebase:", firebaseData); 
         const updatedData = {
           id: userData.id,
           fullname: firebaseData.fullname || "",
           email: firebaseData.email || "",
           phone: firebaseData.phone || "",
-          password: firebaseData.password || "", // Vẫn giữ để kiểm tra
+          password: firebaseData.password || "", 
         };
 
         setUserData(updatedData);
-        console.log("Đang cập nhật userData trong AsyncStorage (làm mới):", updatedData); // Thêm log
+        console.log("Đang cập nhật userData trong AsyncStorage (làm mới):", updatedData); 
         await AsyncStorage.setItem("userData", JSON.stringify(updatedData));
-        console.log("Cập nhật AsyncStorage (làm mới) thành công."); // Thêm log
+        console.log("Cập nhật AsyncStorage (làm mới) thành công."); 
         Alert.alert("Thành công", "Dữ liệu đã được làm mới từ Firebase");
-        console.log("Dữ liệu đã được làm mới thành công."); // Thêm log
+        console.log("Dữ liệu đã được làm mới thành công.");
       } else {
         Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng trên Firebase.");
-        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase khi làm mới."); // Thêm log
+        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase khi làm mới."); 
       }
     } catch (error) {
-      console.error("Lỗi khi làm mới dữ liệu người dùng:", error); // Thêm log chi tiết lỗi
+      console.error("Lỗi khi làm mới dữ liệu người dùng:", error); 
       Alert.alert("Lỗi", `Không thể làm mới dữ liệu. Chi tiết: ${error.message}`);
     }
-    console.log("--- Kết thúc làm mới dữ liệu người dùng từ Firebase ---"); // Thêm log
+    console.log("--- Kết thúc làm mới dữ liệu người dùng từ Firebase ---"); 
   };
 
   return (
@@ -288,7 +284,7 @@ const ProfileDetail = () => {
             style={styles.editButton}
             onPress={() => {
               setEditMode(true);
-              console.log("Chuyển sang chế độ chỉnh sửa."); // Thêm log
+              console.log("Chuyển sang chế độ chỉnh sửa.");
             }}
           >
             <Text style={styles.editButtonText}>Sửa</Text>
@@ -305,7 +301,7 @@ const ProfileDetail = () => {
               value={userData.fullname}
               onChangeText={(text) => {
                 setUserData({ ...userData, fullname: text });
-                console.log("Họ và tên thay đổi:", text); // Thêm log
+                console.log("Họ và tên thay đổi:", text); 
               }}
               placeholder="Nhập họ và tên"
             />
@@ -328,7 +324,7 @@ const ProfileDetail = () => {
               value={userData.phone}
               onChangeText={(text) => {
                 setUserData({ ...userData, phone: text });
-                console.log("Số điện thoại thay đổi:", text); // Thêm log
+                console.log("Số điện thoại thay đổi:", text);
               }}
               placeholder="Nhập số điện thoại"
               keyboardType="phone-pad"
@@ -343,20 +339,19 @@ const ProfileDetail = () => {
         style={styles.changePasswordButton}
         onPress={() => {
           setShowPasswordModal(true);
-          console.log("Mở modal đổi mật khẩu."); // Thêm log
+          console.log("Mở modal đổi mật khẩu."); 
         }}
       >
         <Text style={styles.changePasswordText}>Đổi mật khẩu</Text>
       </TouchableOpacity>
 
-      {/* Password Change Modal */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={showPasswordModal}
         onRequestClose={() => {
           setShowPasswordModal(false);
-          console.log("Đóng modal đổi mật khẩu."); // Thêm log
+          console.log("Đóng modal đổi mật khẩu."); 
         }}
       >
         <View style={styles.modalContainer}>
@@ -365,7 +360,7 @@ const ProfileDetail = () => {
               <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
               <TouchableOpacity onPress={() => {
                 setShowPasswordModal(false);
-                console.log("Đóng modal đổi mật khẩu từ nút X."); // Thêm log
+                console.log("Đóng modal đổi mật khẩu từ nút X."); 
               }}>
                 <Ionicons name="close" size={24} color="#333" />
               </TouchableOpacity>
@@ -506,7 +501,6 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "bold",
   },
-  // Modal styles
   modalContainer: {
     flex: 1,
     justifyContent: "center",

@@ -10,12 +10,12 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Modal, // Import Modal
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
-import app from "../../sever/firebase";
-import { useAuth } from "../../context/AuthContext";
+import app from "../../sever/firebase"; // Đảm bảo đường dẫn này đúng
+import { useAuth } from "../../context/AuthContext"; // Đảm bảo đường dẫn này đúng
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const db = getFirestore(app);
@@ -25,10 +25,13 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  // THÊM HAI DÒNG NÀY VÀO ĐÂY:
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false); // State cho modal chào mừng
-  const [welcomeUserName, setWelcomeUserName] = useState(""); // State lưu tên người dùng
-  // HẾT PHẦN THÊM
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [welcomeUserName, setWelcomeUserName] = useState("");
+
+  // States mới cho hiệu ứng Focus Input
+  const [isEmailFocused, setIsEmailFocused] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
 
   const { login } = useAuth();
 
@@ -43,16 +46,15 @@ const LoginScreen = ({ navigation }) => {
     setIsLoading(true);
     try {
       console.log("Kết nối Firestore...");
+      // LƯU Ý: Việc lấy toàn bộ collection "users" về client để xác thực không được khuyến khích
+      // vì lý do bảo mật và hiệu suất. Nên sử dụng Firebase Authentication.
       const querySnapshot = await getDocs(collection(db, "users"));
 
       console.log(`Tìm thấy ${querySnapshot.size} người dùng`);
       let foundUser = null;
 
       querySnapshot.forEach((doc) => {
-        console.log(`Kiểm tra user: ${doc.id}`);
         const userData = doc.data();
-        // Cần đảm bảo rằng email và password khớp nhau.
-        // Bạn có thể cân nhắc trim() các giá trị này nếu có khả năng có khoảng trắng.
         if (userData.email === email && userData.password === password) {
           foundUser = { id: doc.id, ...userData };
         }
@@ -66,19 +68,19 @@ const LoginScreen = ({ navigation }) => {
           email: foundUser.email,
           phone: foundUser.phone,
           role: foundUser.role,
-          password: foundUser.password, // Nhắc lại: không nên lưu mật khẩu plaintext
+          password: foundUser.password,
         }));
 
-        // Sử dụng setWelcomeUserName và setShowWelcomeModal ở đây
-        setWelcomeUserName(foundUser.fullname); // Lưu tên người dùng để hiển thị
-        setShowWelcomeModal(true); // Hiển thị modal chào mừng
 
-        // Đợi một chút để người dùng nhìn thấy modal, sau đó tự động đăng nhập và điều hướng
+        setWelcomeUserName(foundUser.fullname);
+        setShowWelcomeModal(true);
+
+
         setTimeout(async () => {
           await login(foundUser.id, foundUser.role);
-          setShowWelcomeModal(false); // Đóng modal sau khi điều hướng
-        }, 1500); // Hiển thị modal trong 1.5 giây
-        
+          setShowWelcomeModal(false);
+        }, 1500);
+
       } else {
         console.log("Sai thông tin đăng nhập");
         Alert.alert("Lỗi", "Email hoặc mật khẩu không đúng");
@@ -97,18 +99,28 @@ const LoginScreen = ({ navigation }) => {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Logo và Tiêu đề */}
         <View style={styles.logoContainer}>
           <Image
-            source={require("../../assets/images/icon.png")}
+            source={require("../../assets/images/icon.png")} // Đảm bảo đường dẫn này đúng
             style={styles.logo}
             defaultSource={require("../../assets/images/icon.png")}
           />
           <Text style={styles.appTitle}>Coffee Shop</Text>
         </View>
 
+        {/* Input Group */}
         <View style={styles.inputGroup}>
-          <View style={styles.inputContainer}>
-            <Ionicons name="mail-outline" size={20} style={styles.icon} />
+          {/* Input Email */}
+          <View style={[
+            styles.inputContainer,
+            isEmailFocused && styles.inputContainerFocused // Áp dụng style focus
+          ]}>
+            <Ionicons 
+                name="mail-outline" 
+                size={20} 
+                style={[styles.icon, isEmailFocused && styles.iconFocused]} // Đổi màu icon
+            />
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -116,30 +128,43 @@ const LoginScreen = ({ navigation }) => {
               autoCapitalize="none"
               value={email}
               onChangeText={setEmail}
-              placeholderTextColor="#999" // Thêm màu cho placeholder
+              placeholderTextColor="#999"
+              onFocus={() => setIsEmailFocused(true)}
+              onBlur={() => setIsEmailFocused(false)}
             />
           </View>
 
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} style={styles.icon} />
+          {/* Input Password */}
+          <View style={[
+            styles.inputContainer,
+            isPasswordFocused && styles.inputContainerFocused // Áp dụng style focus
+          ]}>
+            <Ionicons 
+                name="lock-closed-outline" 
+                size={20} 
+                style={[styles.icon, isPasswordFocused && styles.iconFocused]} // Đổi màu icon
+            />
             <TextInput
               style={styles.input}
               placeholder="Mật khẩu"
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
-              placeholderTextColor="#999" // Thêm màu cho placeholder
+              placeholderTextColor="#999"
+              onFocus={() => setIsPasswordFocused(true)}
+              onBlur={() => setIsPasswordFocused(false)}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.passwordToggle}>
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={20}
-                color="#666" // Màu cho icon mắt
+                color="#666"
               />
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Nút Đăng nhập */}
         <TouchableOpacity
           style={[styles.button, isLoading && styles.buttonDisabled]}
           onPress={handleLogin}
@@ -150,34 +175,35 @@ const LoginScreen = ({ navigation }) => {
           </Text>
         </TouchableOpacity>
 
+        {/* Link Đăng ký */}
         <TouchableOpacity onPress={() => navigation.navigate("Register")} style={styles.registerButton}>
           <Text style={styles.registerText}>Chưa có tài khoản? <Text style={styles.registerLink}>Đăng ký ngay</Text></Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Welcome Modal */}
+
+      {/* Modal Chào mừng */}
       <Modal
-        animationType="fade" // Hiệu ứng mờ dần
-        transparent={true} // Cho phép nền trong suốt
-        visible={showWelcomeModal} // Điều khiển hiển thị
+        animationType="fade"
+        transparent={true}
+        visible={showWelcomeModal}
         onRequestClose={() => {
-          // Xử lý khi người dùng nhấn nút back (Android)
           setShowWelcomeModal(false);
         }}
       >
         <View style={welcomeModalStyles.centeredView}>
           <View style={welcomeModalStyles.modalView}>
             <Image
-              source={require("../../assets/images/icon.png")} // Thay bằng icon chào mừng của bạn
+              source={require("../../assets/images/icon.png")} // Đảm bảo đường dẫn này đúng
               style={welcomeModalStyles.modalIcon}
             />
             <Text style={welcomeModalStyles.modalTitle}>Chào mừng!</Text>
             <Text style={welcomeModalStyles.modalText}>
-              Chào mừng bạn trở lại, {welcomeUserName}!
+              Chào mừng bạn trở lại, **{welcomeUserName}**!
             </Text>
             <TouchableOpacity
               style={welcomeModalStyles.closeButton}
-              onPress={() => setShowWelcomeModal(false)} // Cho phép đóng thủ công
+              onPress={() => setShowWelcomeModal(false)}
             >
               <Text style={welcomeModalStyles.closeButtonText}>Tiếp tục</Text>
             </TouchableOpacity>
@@ -190,44 +216,48 @@ const LoginScreen = ({ navigation }) => {
 
 export default LoginScreen;
 
+// --- STYLESHEET CẢI TIẾN ---
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F8F8", // Nền sáng hơn
+    backgroundColor: "#F8F8F8", // Nền sáng nhẹ
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: 25, // Giảm padding ngang một chút
+    paddingHorizontal: 25,
     justifyContent: "center",
-    paddingBottom: 40, // Tăng padding dưới
+    paddingBottom: 40,
   },
+  // --- LOGO/TITLE ---
   logoContainer: {
     alignItems: "center",
-    marginTop: 80, // Tăng khoảng cách từ trên xuống
-    marginBottom: 50, // Tăng khoảng cách dưới logo
+    marginTop: 60,
+    marginBottom: 40,
   },
   logo: {
-    width: 150, // Tăng kích thước logo
-    height: 150, // Tăng kích thước logo
+    width: 120,
+    height: 120,
     resizeMode: "contain",
   },
   appTitle: {
-    fontSize: 32, // Font lớn hơn cho tiêu đề
+    fontSize: 36,
     fontWeight: "bold",
-    color: "#8B4513", // Màu nâu đậm
-    marginTop: 15,
+    color: "#4B2C20", // Màu nâu đậm
+    marginTop: 10,
   },
+  // --- INPUTS ---
   inputGroup: {
-    marginBottom: 30, // Khoảng cách lớn hơn giữa nhóm input và nút
+    marginBottom: 30,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF", // Nền trắng cho input
-    borderRadius: 10, // Bo tròn góc input
-    paddingHorizontal: 15, // Padding bên trong input
-    marginBottom: 15, // Khoảng cách giữa các input
-    shadowColor: "#000", // Thêm đổ bóng
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12, // Tăng bo góc nhẹ
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -235,113 +265,131 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
+    borderWidth: 1, 
+    borderColor: '#E0E0E0', // Viền mỏng mặc định
+  },
+  // Style cho input khi focus
+  inputContainerFocused: {
+    borderColor: "#6D4C41", // Màu nâu ấm khi focus
+    borderWidth: 2,
+    shadowColor: "#6D4C41",
+    shadowOpacity: 0.3,
+    elevation: 5,
   },
   icon: {
-    marginRight: 12, // Tăng khoảng cách giữa icon và input
-    color: "#666",
+    marginRight: 12,
+    color: "#999", // Màu icon mặc định
+  },
+  iconFocused: {
+    color: "#6D4C41", // Màu icon khi focus
   },
   input: {
     flex: 1,
-    height: 50, // Chiều cao input lớn hơn
+    height: 50,
     fontSize: 16,
-    color: "#333", // Màu chữ đậm hơn
+    color: "#333",
   },
   passwordToggle: {
     padding: 10,
   },
+  // --- BUTTON ---
   button: {
-    backgroundColor: "#8B4513",
-    paddingVertical: 18, // Padding dọc lớn hơn
-    borderRadius: 30, // Bo tròn nhiều hơn cho nút
+    backgroundColor: "#6D4C41", // Màu nâu đậm (Coffee)
+    paddingVertical: 15,
+    borderRadius: 40, // Bo góc tròn hơn
     alignItems: "center",
-    marginVertical: 10,
-    shadowColor: "#8B4513", // Đổ bóng cho nút
+    marginVertical: 15,
+    shadowColor: "#4B2C20",
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
   },
   buttonDisabled: {
-    backgroundColor: "#A9A9A9",
-    shadowColor: "transparent", // Loại bỏ shadow khi disabled
+    backgroundColor: "#BCAAA4", // Màu xám nâu nhạt
+    shadowOpacity: 0,
     elevation: 0,
   },
   buttonText: {
     color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18, // Font lớn hơn cho text nút
+    fontWeight: "900", // Rất đậm
+    fontSize: 18,
+    letterSpacing: 0.5,
   },
+  // --- REGISTER LINK ---
   registerButton: {
-    marginTop: 20,
+    marginTop: 30,
     paddingVertical: 10,
   },
   registerText: {
     textAlign: "center",
-    color: "#666", // Màu chữ nhẹ nhàng hơn
-    fontSize: 15,
+    color: "#757575",
+    fontSize: 16,
   },
   registerLink: {
-    color: "#8B4513", // Màu nâu đậm cho link
+    color: "#A1887F", // Màu nâu nhạt ấm
     fontWeight: "bold",
+    textDecorationLine: "underline",
   },
 });
 
-// Styles for the Welcome Modal - giữ nguyên vì đã khá tốt
+
 const welcomeModalStyles = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)", // Nền mờ
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   modalView: {
     margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
+    backgroundColor: "#FFFBF5", // Màu kem nhạt
+    borderRadius: 25, // Bo góc tròn hơn
+    padding: 40,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
     shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    shadowRadius: 5,
+    elevation: 10,
   },
   modalIcon: {
-    width: 80,
-    height: 80,
-    marginBottom: 15,
+    width: 90,
+    height: 90,
+    marginBottom: 20,
     resizeMode: "contain",
   },
   modalTitle: {
     marginBottom: 10,
     textAlign: "center",
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "bold",
-    color: "#8B4513",
+    color: "#6D4C41",
   },
   modalText: {
-    marginBottom: 25,
+    marginBottom: 30,
     textAlign: "center",
     fontSize: 18,
-    color: "#333",
+    color: "#4B2C20",
+    lineHeight: 28,
   },
   closeButton: {
-    backgroundColor: "#8B4513",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    elevation: 2,
+    backgroundColor: "#6D4C41",
+    borderRadius: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 35,
+    elevation: 5,
   },
   closeButtonText: {
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 17,
   },
 });

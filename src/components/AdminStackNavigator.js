@@ -42,8 +42,7 @@ export const DashboardStackNavigator = () => {
         },
       }}
     >
-      {/* màn hình chính: DashboardMain
-      màn hình doanh thu: RevenueStats */}
+     
       <DashboardStack.Screen
         name="DashboardMain"
         component={DashboardScreen}

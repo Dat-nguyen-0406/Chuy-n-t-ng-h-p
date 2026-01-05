@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// Import các hàm cần thiết từ firebase.js của bạn
-import { getFirestore, doc, getDoc } from 'firebase/firestore'; // Import doc và getDoc
-import app from '../../sever/firebase'; // Đảm bảo đường dẫn này chính xác
+import { getFirestore, doc, getDoc } from 'firebase/firestore'; 
+import app from '../../sever/firebase'; 
 
-const db = getFirestore(app); // Khởi tạo db
+const db = getFirestore(app); 
 
 const DrinkDetailsScreen = ({ route, navigation }) => {
-  const { drinkId } = route.params || {}; // Không gán ID mặc định, để nó đến từ navigation
+  const { drinkId } = route.params || {}; 
   const [isLoading, setIsLoading] = useState(true);
   const [drink, setDrink] = useState(null);
 
@@ -23,20 +22,19 @@ const DrinkDetailsScreen = ({ route, navigation }) => {
       }
 
       try {
-        // *** SỬA TÊN COLLECTION TẠI ĐÂY: từ 'drinks' thành 'douong' ***
-        const docRef = doc(db, 'douong', drinkId); // <--- SỬA TẠI ĐÂY
+ 
+        const docRef = doc(db, 'douong', drinkId);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           const data = docSnap.data();
           setDrink({
-            id: docSnap.id, // ID tài liệu Firestore
-            name: data.drinkname, // Lấy từ trường 'drinkname'
-            price: typeof data.price === 'number' ? data.price : (parseFloat(data.price) || 0), // Đảm bảo giá là số
+            id: docSnap.id, 
+            name: data.drinkname,
+            price: typeof data.price === 'number' ? data.price : (parseFloat(data.price) || 0), 
             description: data.description,
             category: data.category,
-            imageUrl: data.image, // Lấy URL ảnh từ Firestore
-            // Thêm các trường dữ liệu khác nếu có
+            imageUrl: data.image,
             quatiy: typeof data.quatiy === 'number' ? data.quatiy : (parseInt(data.quatiy) || 0),
             start: typeof data.start === 'number' ? data.start : (parseFloat(data.start) || 0),
             status: data.status,
@@ -45,7 +43,7 @@ const DrinkDetailsScreen = ({ route, navigation }) => {
         } else {
           console.log("DrinkDetailsScreen: Không tìm thấy tài liệu với ID:", drinkId);
           Alert.alert("Lỗi", "Không tìm thấy thông tin đồ uống.");
-          navigation.goBack(); // Quay lại nếu không tìm thấy
+          navigation.goBack(); 
         }
       } catch (error) {
         console.error("DrinkDetailsScreen: Lỗi khi fetch chi tiết đồ uống:", error);
@@ -84,7 +82,7 @@ const DrinkDetailsScreen = ({ route, navigation }) => {
           <Text style={styles.price}>{drink.price.toLocaleString("vi-VN")} đ</Text>
           <TouchableOpacity
             style={styles.editButton}
-            onPress={() => navigation.navigate("EditDrink", { drinkId: drink.id })} // Truyền drinkId
+            onPress={() => navigation.navigate("EditDrink", { drinkId: drink.id })} 
           >
             <Ionicons name="create-outline" size={20} color="#fff" />
             <Text style={styles.editButtonText}>Sửa đồ uống</Text>
@@ -176,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     alignItems: 'center',
     marginTop: 15,
-    alignSelf: 'flex-start', // Đặt nút về phía trái
+    alignSelf: 'flex-start', 
   },
   editButtonText: {
     color: '#fff',
@@ -221,10 +219,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   available: {
-    color: '#4CAF50', // Xanh lá cây
+    color: '#4CAF50',
   },
   notAvailable: {
-    color: '#F44336', // Đỏ
+    color: '#F44336',
   },
   emptyText: {
     fontSize: 18,

@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { app, db } from "../../sever/firebase";
-import { collection, getDocs, getFirestore } from "firebase/firestore";
+import { db } from "../../sever/firebase";
+import { collection, getDocs } from "firebase/firestore";
 import {
   View,
   Image,
   Text,
   FlatList,
   ActivityIndicator,
-  TextInput,
   TouchableOpacity,
 } from "react-native";
 import { StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import { useNavigation, useIsFocused } from "@react-navigation/native"; // Thêm useIsFocused
+import { useNavigation, useIsFocused } from "@react-navigation/native"; 
 
 const HomeScreen = () => {
   const [coffeeItems, setCoffeeItems] = useState([]);
@@ -21,19 +20,18 @@ const HomeScreen = () => {
   const [headerData, setHeaderData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchText, setSearchText] = useState("");
+  const [searchText] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); // Khai báo useIsFocused
-
-  // Hàm để fetch tất cả dữ liệu cần thiết cho Home Screen
+  const isFocused = useIsFocused(); 
+  
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     console.log("HomeScreen: Bắt đầu fetchData.");
     try {
-      // Fetch categories
+     
       const categorySnapshot = await getDocs(collection(db, "danhmuc"));
       const fetchedCategories = categorySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -41,7 +39,7 @@ const HomeScreen = () => {
       }));
       setCategories([{ id: "all", name: "Tất cả" }, ...fetchedCategories]);
 
-      // Fetch coffee items
+      
       const coffeeSnapshot = await getDocs(collection(db, "douong"));
       const coffeeItemsData = coffeeSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -50,7 +48,7 @@ const HomeScreen = () => {
       setCoffeeItems(coffeeItemsData);
       setFilteredItems(coffeeItemsData);
 
-      // Fetch header data
+      
       const headerSnapshot = await getDocs(collection(db, "photo"));
       if (!headerSnapshot.empty) {
         const headerDoc = headerSnapshot.docs[0].data();
@@ -61,7 +59,7 @@ const HomeScreen = () => {
       } else {
          setHeaderData({
             title: "Cà phê chất lượng",
-            image: "https://via.placeholder.com/400x200", // Fallback mặc định
+            image: "https://via.placeholder.com/400x200", 
           });
       }
 
@@ -83,15 +81,13 @@ const HomeScreen = () => {
     }
   };
 
-  // Sử dụng useIsFocused để gọi fetchData khi màn hình được focus
   useEffect(() => {
     if (isFocused) {
       console.log("HomeScreen: Màn hình đang được focus, gọi fetchData.");
       fetchData();
     }
-  }, [isFocused]); // Dependency array bao gồm isFocused
+  }, [isFocused]);
 
-  // Hàm lọc sản phẩm theo category và search text
   useEffect(() => {
     let result = coffeeItems;
 

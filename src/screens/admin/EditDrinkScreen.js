@@ -4,14 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Switch, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { Ionicons } from '@expo/vector-icons';
-// Import các hàm cần thiết từ firebase.js của bạn
 import { getFirestore, doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
-import app from '../../sever/firebase'; // Đảm bảo đường dẫn này chính xác
+import app from '../../sever/firebase'; 
 
-const db = getFirestore(app); // Khởi tạo db
+const db = getFirestore(app); 
 
 const EditDrinkScreen = ({ route, navigation }) => {
-  const { drinkId } = route.params || {}; // Không gán ID mặc định
+  const { drinkId } = route.params || {}; 
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,24 +22,22 @@ const EditDrinkScreen = ({ route, navigation }) => {
   const [quatiy, setQuatiy] = useState('');
   const [start, setStart] = useState('');
   const [status, setStatus] = useState('');
-  const [active, setActive] = useState(false); // Thêm state cho trạng thái active
-  const [categories, setCategories] = useState([]); // State để lưu danh mục từ Firestore
+  const [active, setActive] = useState(false); 
+  const [categories, setCategories] = useState([]); 
 
   useEffect(() => {
    const fetchDrinkAndCategories = async () => {
       try {
-        // Fetch Categories
+
         const categorySnapshot = await getDocs(collection(db, "danhmuc"));
         const fetchedCategories = categorySnapshot.docs.map(doc => ({
           id: doc.id,
-          name: doc.data().categoryName // Đảm bảo trường tên danh mục là 'name'
+          name: doc.data().categoryName 
         }));
         setCategories(fetchedCategories);
 
-        // Fetch drink data
-        if (drinkId) {
-          // *** SỬA TÊN COLLECTION TẠI ĐÂY: từ 'drinks' thành 'douong' ***
-          const docRef = doc(db, 'douong', drinkId); // <--- SỬA TẠY ĐÂY
+        if (drinkId) {     
+          const docRef = doc(db, 'douong', drinkId); 
           const docSnap = await getDoc(docRef);
 
           if (docSnap.exists()) {
@@ -78,14 +75,14 @@ const EditDrinkScreen = ({ route, navigation }) => {
 
     setIsSubmitting(true);
     try {
-      // *** SỬA TÊN COLLECTION TẠI ĐÂY: từ 'drinks' thành 'douong' ***
-      const drinkRef = doc(db, 'douong', drinkId); // <--- SỬA TẠI ĐÂY
+
+      const drinkRef = doc(db, 'douong', drinkId); 
       await updateDoc(drinkRef, {
         drinkname: name,
         price: parseFloat(price),
         description: description,
         category: category,
-        image: imageUrl, // Giữ nguyên URL ảnh hoặc cho phép người dùng thay đổi
+        image: imageUrl, 
         quatiy: parseInt(quatiy),
         start: parseFloat(start),
         status: status,
@@ -102,11 +99,9 @@ const EditDrinkScreen = ({ route, navigation }) => {
     }
   };
 
-  // Hàm xử lý chọn ảnh (giả định)
   const handleImagePick = () => {
     Alert.alert("Tính năng chọn ảnh", "Tính năng này cần tích hợp ImagePicker.");
-    // Thực tế sẽ dùng ImagePicker để chọn/chụp ảnh và upload lên Firebase Storage
-    // Sau đó cập nhật imageUrl state
+   
   };
 
   if (isLoading) {

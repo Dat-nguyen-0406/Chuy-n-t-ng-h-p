@@ -10,11 +10,10 @@ import {
   Switch
 } from 'react-native';
 
-import { getFirestore, doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
-import { app, db } from '../../sever/firebase'; // Đảm bảo đường dẫn và import 'db' chính xác
-
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import {  db } from '../../sever/firebase'; 
 const EditCategoryScreen = ({ route, navigation }) => {
-  const { category } = route.params; // category should contain the id, name, and isActive status
+  const { category } = route.params; 
   const [categoryName, setCategoryName] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,8 +33,8 @@ const EditCategoryScreen = ({ route, navigation }) => {
 
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setCategoryName(data.categoryName || ''); // Assuming field name is 'categoryName'
-          setIsActive(data.isActive === undefined ? true : data.isActive); // Default to true if not set
+          setCategoryName(data.categoryName || '');
+          setIsActive(data.isActive === undefined ? true : data.isActive); 
         } else {
           Alert.alert("Lỗi", "Không tìm thấy danh mục này trong cơ sở dữ liệu.");
           navigation.goBack();
@@ -49,7 +48,7 @@ const EditCategoryScreen = ({ route, navigation }) => {
     };
 
     fetchCategoryDetails();
-  }, [category.id, navigation]); // Dependency array to re-run if category ID changes
+  }, [category.id, navigation]); 
 
   const handleUpdateCategory = async () => {
     if (!categoryName.trim()) {

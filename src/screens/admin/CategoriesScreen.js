@@ -10,14 +10,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
-
-// Import Firestore functions
 import { getFirestore, collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
-import app from '../../sever/firebase'; // Đảm bảo đường dẫn này đúng
+import app from '../../sever/firebase';
 
-// Initialize Firestore DB
 const db = getFirestore(app);
-
 const CategoriesScreen = ({ navigation }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,10 +31,9 @@ const CategoriesScreen = ({ navigation }) => {
     console.log("CategoriesScreen: Bắt đầu fetchCategories.");
     try {
       console.log("CategoriesScreen: Chuẩn bị lấy dữ liệu từ collection 'danhmuc'...");
-      // Thay đổi "mockCategories" bằng việc lấy dữ liệu từ Firestore
-      const querySnapshot = await getDocs(collection(db, "danhmuc")); // Lấy từ collection "danhmuc"
+      const querySnapshot = await getDocs(collection(db, "danhmuc")); 
       console.log(`CategoriesScreen: Đã nhận querySnapshot. Số lượng tài liệu: ${querySnapshot.size}`);
-
+      
       const fetchedCategories = [];
       if (querySnapshot.empty) {
         console.log("CategoriesScreen: Collection 'danhmuc' rỗng hoặc không tìm thấy tài liệu nào.");
@@ -47,19 +42,22 @@ const CategoriesScreen = ({ navigation }) => {
           const data = doc.data();
           console.log(`CategoriesScreen: Đang xử lý tài liệu ID: ${doc.id}, Dữ liệu:`, data);
           fetchedCategories.push({
-            id: doc.id, // Firestore document ID
-            name: data.categoryName, // Tên danh mục
-            active: data.active, // Trạng thái active nếu có
-            // Thêm các trường khác nếu có trong Firestore của bạn
+            id: doc.id, 
+            name: data.categoryName, 
+            active: data.active,
           });
         });
       }
       console.log("CategoriesScreen: Đã fetch xong, tổng số danh mục:", fetchedCategories.length);
       setCategories(fetchedCategories);
-    } catch (error) {
+    } 
+    catch (error) 
+    {
       console.error("CategoriesScreen: Lỗi khi fetch danh mục:", error);
       Alert.alert('Lỗi', `Không thể tải danh mục từ Firestore: ${error.message}`);
-    } finally {
+    } 
+    finally 
+    {
       setLoading(false);
       console.log("CategoriesScreen: Kết thúc fetchCategories.");
     }
@@ -71,17 +69,15 @@ const CategoriesScreen = ({ navigation }) => {
       'Bạn có chắc chắn muốn xóa danh mục này?',
       [
         { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
+        { text: 'Xóa', style: 'destructive', onPress: async () =>
+           {
             setLoading(true);
             console.log(`CategoriesScreen: Bắt đầu xóa danh mục với ID: ${id}`);
             try {
-              await deleteDoc(doc(db, "danhmuc", id)); // Xóa document trong Firestore
+              await deleteDoc(doc(db, "danhmuc", id)); 
               console.log(`CategoriesScreen: Đã xóa thành công danh mục ID: ${id}`);
               Alert.alert('Thành công', 'Danh mục đã được xóa.');
-              fetchCategories(); // Tải lại danh sách danh mục sau khi xóa
+              fetchCategories(); 
             } catch (error) {
               console.error(`CategoriesScreen: Lỗi khi xóa danh mục ID ${id}:`, error);
               Alert.alert('Lỗi', `Không thể xóa danh mục: ${error.message}`);
@@ -99,14 +95,12 @@ const CategoriesScreen = ({ navigation }) => {
   const renderCategoryItem = ({ item }) => (
     <TouchableOpacity
       style={styles.categoryItem}
-      // Bạn có thể thêm onPress để điều hướng đến màn hình chỉnh sửa danh mục
-      // onPress={() => navigation.navigate("EditCategory", { category: item })}
     >
       <Text style={styles.categoryName}>{item.name}</Text>
       <View style={styles.actions}>
         <TouchableOpacity
           style={[styles.actionButton, styles.editButton]}
-          onPress={() => navigation.navigate("EditCategory", { category: item })} // Điều hướng đến màn hình chỉnh sửa
+          onPress={() => navigation.navigate("EditCategory", { category: item })}
         >
           <Ionicons name="pencil" size={20} color="white" />
         </TouchableOpacity>
@@ -133,7 +127,7 @@ const CategoriesScreen = ({ navigation }) => {
     <View style={styles.container}>
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate("AddCategory")} // Điều hướng đến màn hình thêm danh mục mới
+        onPress={() => navigation.navigate("AddCategory")} 
       >
         <Ionicons name="add" size={24} color="white" />
         <Text style={styles.addButtonText}>Thêm danh mục mới</Text>

@@ -14,7 +14,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigation, useIsFocused } from "@react-navigation/native"; // Thêm useIsFocused
+import { useNavigation, useIsFocused } from "@react-navigation/native"; 
 
 const ProfileScreen = () => {
   const { logout } = useAuth();
@@ -22,9 +22,9 @@ const ProfileScreen = () => {
   const [showBadge, setShowBadge] = useState(true);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); // Khai báo useIsFocused
+  const isFocused = useIsFocused(); 
 
-  // Hàm để fetch thông tin người dùng từ AsyncStorage
+
   const fetchUserData = async () => {
     try {
       const userDataString = await AsyncStorage.getItem("userData");
@@ -33,20 +33,20 @@ const ProfileScreen = () => {
         console.log("ProfileScreen: userData from AsyncStorage:", parsed);
         setUserData(parsed);
       } else {
-        setUserData({}); // Đặt lại nếu không có dữ liệu
+        setUserData({}); 
       }
     } catch (error) {
       console.log("ProfileScreen: Lỗi khi lấy thông tin người dùng:", error);
-      setUserData({}); // Đặt lại nếu có lỗi
+      setUserData({}); 
     }
   };
 
-  // Sử dụng useIsFocused để gọi fetchUserData khi màn hình được focus
+
   useEffect(() => {
     if (isFocused) {
       console.log("ProfileScreen: Màn hình đang được focus, gọi fetchUserData.");
       fetchUserData();
-      // Giả lập có thông báo mới (bạn có thể thay thế bằng logic thực tế của mình)
+    
       setTimeout(() => {
         setShowBadge(false);
       }, 5000);
@@ -67,7 +67,8 @@ const ProfileScreen = () => {
     navigation.navigate("ProfileDetail", { id: "1" });
   };
   const navigateToOrderHistory = () => {
-    navigation.navigate("OrderHistory");
+    navigation.navigate("Cart"
+     );
   };
 
   const navigateToNotifications = () => {
@@ -89,7 +90,7 @@ const ProfileScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header với thông tin người dùng */}
+  
       <View style={styles.header}>
         <View style={styles.headerTop}>
           <View style={styles.profileImageContainer}>
@@ -456,7 +457,7 @@ phone: {
     fontSize: 16,
     fontWeight: "bold",
   },
-  // Modal styles
+
   modalContainer: {
     flex: 1,
     justifyContent: "flex-end",

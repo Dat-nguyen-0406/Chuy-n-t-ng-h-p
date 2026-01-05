@@ -12,8 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getFirestore, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import app from '../../sever/firebase'; // Adjust the path to your firebase.js file
-
+import app from '../../sever/firebase';
 const OrderDetailsScreen = ({ route, navigation }) => {
   const { orderId } = route.params || { orderId: null };
   const [isLoading, setIsLoading] = useState(true);
@@ -21,14 +20,13 @@ const OrderDetailsScreen = ({ route, navigation }) => {
 
   const db = getFirestore(app);
 
-  // Order status colors and labels, consistent with OrdersScreen.js
+  
   const statusConfig = {
     'Đang xử lý': { color: '#FF9800', icon: 'time-outline', label: 'Đang xử lý' },
     'Đang giao': { color: '#2196F3', icon: 'bicycle-outline', label: 'Đang giao' },
     'Đã hoàn thành': { color: '#4CAF50', icon: 'checkmark-done-outline', label: 'Đã hoàn thành' },
     'Đã hủy': { color: '#F44336', icon: 'close-outline', label: 'Đã hủy' },
-    // Add other statuses if needed, e.g., 'Chờ xác nhận'
-    'Chờ xác nhận': { color: '#FF9800', icon: 'hourglass-outline', label: 'Chờ xác nhận' }, // Example
+    'Chờ xác nhận': { color: '#FF9800', icon: 'hourglass-outline', label: 'Chờ xác nhận' }, 
     'Không xác định': { color: '#757575', icon: 'help-circle-outline', label: 'Không xác định' },
   };
 
@@ -53,7 +51,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
           const formattedOrder = {
             id: docSnap.id,
             ...data,
-            orderNumber: `HD${docSnap.id.slice(-6).toUpperCase()}`, // Use last 6 chars of ID
+            orderNumber: `HD${docSnap.id.slice(-6).toUpperCase()}`, 
             orderDate: new Date(createdAt).toLocaleString('vi-VN', {
               day: '2-digit',
               month: '2-digit',
@@ -63,17 +61,17 @@ const OrderDetailsScreen = ({ route, navigation }) => {
             }),
             customer: {
               name: data.userName || 'N/A',
-              phone: data.userPhone || 'N/A',
+              phone: data.phone || 'N/A',
               address: data.deliveryAddress || 'N/A',
             },
             items: data.items || [],
             payment: {
               method: data.paymentMethod || 'N/A',
-              status: data.paymentStatus || 'Chưa thanh toán', // Default status
+              status: data.paymentStatus || 'Đã thanh toán', 
             },
             subtotal: data.subtotal || 0,
-            deliveryFee: data.deliveryFee || 0, // Assuming deliveryFee comes from Firestore
-            discount: data.discount || 0,     // Assuming discount comes from Firestore
+            deliveryFee: data.deliveryFee || 0, 
+            discount: data.discount || 0,    
             total: data.total || 0,
             notes: data.notes || '',
             staff: {
@@ -81,7 +79,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
               lastUpdated: data.staffLastUpdated || 'Chưa cập nhật',
             },
             logs: data.logs || [],
-            status: data.status || 'Không xác định', // Ensure status exists
+            status: data.status || 'Không xác định',
           };
           setOrder(formattedOrder);
         } else {
@@ -115,17 +113,17 @@ const OrderDetailsScreen = ({ route, navigation }) => {
               const newLogEntry = {
                 time: new Date().toLocaleString('vi-VN'),
                 action: `Chuyển sang ${statusConfig[newStatus]?.label || newStatus}`,
-                user: 'Admin (Bạn)', // You can replace with actual admin user if authenticated
+                user: 'Admin (Bạn)', 
               };
 
               await updateDoc(orderRef, {
                 status: newStatus,
-                logs: [newLogEntry, ...order.logs], // Add new log at the beginning
-                staffLastUpdated: 'Admin (Bạn)', // Update last updated staff
-                updatedAt: serverTimestamp(), // Update timestamp
+                logs: [newLogEntry, ...order.logs], 
+                staffLastUpdated: 'Admin (Bạn)', 
+                updatedAt: serverTimestamp(),
               });
 
-              // Update local state to reflect changes immediately
+          
               setOrder(prev => ({
                 ...prev,
                 status: newStatus,
@@ -146,7 +144,6 @@ const OrderDetailsScreen = ({ route, navigation }) => {
 
   const handlePrintOrder = () => {
     Alert.alert('In đơn hàng', 'Chức năng in đơn hàng đang được phát triển...');
-    // Future implementation would connect to a printer service
   };
 
   if (isLoading) {
@@ -175,7 +172,7 @@ const OrderDetailsScreen = ({ route, navigation }) => {
     const currentIndex = statusFlow.indexOf(order.status);
 
     if (order.status === 'Đã hủy' || order.status === 'Đã hoàn thành') {
-      return null; // Cannot change status if cancelled or delivered
+      return null; 
     }
 
     if (currentIndex < statusFlow.length - 1) {
@@ -446,7 +443,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    minWidth: 120, // Ensure consistent width
+    minWidth: 120, 
     justifyContent: 'center',
   },
   statusText: {
@@ -457,7 +454,7 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center', // Center buttons
+    justifyContent: 'center',
     backgroundColor: '#fff',
     padding: 12,
     borderBottomWidth: 1,
@@ -474,7 +471,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
-    borderRadius: 20, // More rounded buttons
+    borderRadius: 20,  
     marginHorizontal: 5,
     marginBottom: 8,
     elevation: 2,
@@ -493,7 +490,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 16,
     marginTop: 10,
-    borderRadius: 8, // More rounded sections
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -534,7 +531,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   orderItem: {
-    backgroundColor: '#fcfcfc', // Lighter background for individual items
+    backgroundColor: '#fcfcfc',
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
@@ -550,12 +547,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#333',
-    flexShrink: 1, // Allow text to shrink
+    flexShrink: 1,
   },
   itemQuantity: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#6F4E37', // Use theme color
+    color: '#6F4E37', 
     marginLeft: 10,
   },
   itemOptions: {
@@ -654,9 +651,9 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: '#6F4E37',
-    marginTop: 5, // Align with the text
+    marginTop: 5, 
     marginRight: 12,
-    flexShrink: 0, // Do not shrink
+    flexShrink: 0,
   },
   logContent: {
     flex: 1,

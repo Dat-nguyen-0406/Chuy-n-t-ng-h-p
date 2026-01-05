@@ -15,10 +15,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-// Import Firestore functions
 import { getFirestore, doc, setDoc } from "firebase/firestore";
-// Ensure 'app' (Firebase app instance) is imported correctly
-import { app } from "../../sever/firebase"; // Assuming 'app' is exported from firebase.js
+import { app } from "../../sever/firebase"; 
 
 const RegisterScreen = ({ navigation }) => {
   const [fullname, setFullname] = useState("");
@@ -43,32 +41,21 @@ const RegisterScreen = ({ navigation }) => {
 
     setIsLoading(true);
     try {
-      const auth = getAuth(app); // Get Firebase Auth instance
+      const auth = getAuth(app); 
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
       const user = userCredential.user;
-
-      const db = getFirestore(app); // Get Firestore instance
-      // Store user data in Firestore
+      const db = getFirestore(app);
       await setDoc(doc(db, "users", user.uid), {
         fullname,
         email,
         phone,
-        role: "customer", // Default role as per your existing code
+        role: "customer", 
         createdAt: new Date().toISOString(),
-        password, // Use ISO string for consistent date storage
-      });
-
-      console.log("Đăng ký thành công cho UID:", user.uid);
-      console.log("Thông tin người dùng đã lưu vào Firestore:", {
-        fullname,
-        email,
-        phone,
-        role: "customer",
-        createdAt: new Date().toISOString(),
+        password, 
       });
 
       Alert.alert("Đăng ký thành công", "Bạn đã đăng ký thành công", [

@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
-  ActivityIndicator, // Thêm ActivityIndicator để hiển thị trạng thái tải
+  ActivityIndicator,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -29,7 +29,6 @@ const SearchScreen = () => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // Load sản phẩm từ Firestore
         const db = getFirestore(app);
         const productsSnapshot = await getDocs(collection(db, "douong"));
         const productsData = productsSnapshot.docs.map((doc) => ({
@@ -38,7 +37,7 @@ const SearchScreen = () => {
         }));
         setProducts(productsData);
 
-        // Load lịch sử tìm kiếm từ AsyncStorage
+      
         const history = await AsyncStorage.getItem("searchHistory");
         if (history) {
           setSearchHistory(JSON.parse(history));
@@ -53,7 +52,7 @@ const SearchScreen = () => {
     loadData();
   }, []);
 
-  // Lưu lịch sử tìm kiếm khi có thay đổi
+ 
   useEffect(() => {
     const saveSearchHistory = async () => {
       try {
@@ -65,8 +64,6 @@ const SearchScreen = () => {
         console.error("Error saving search history:", error);
       }
     };
-
-    // Chỉ lưu nếu có lịch sử và không phải là lần khởi tạo rỗng
     if (searchHistory.length > 0 || (searchHistory.length === 0 && !isLoading)) {
       saveSearchHistory();
     }
@@ -76,8 +73,8 @@ const SearchScreen = () => {
   // Xử lý tìm kiếm chính
   const handleSearch = () => {
     if (!searchText.trim()) {
-      setFilteredProducts([]); // Nếu ô tìm kiếm trống, xóa kết quả tìm kiếm
-      setSuggestions([]); // Xóa đề xuất
+      setFilteredProducts([]); 
+      setSuggestions([]);
       return;
     }
 
@@ -85,7 +82,7 @@ const SearchScreen = () => {
     const newHistory = [
       searchText.trim(),
       ...searchHistory.filter((item) => item.toLowerCase() !== searchText.trim().toLowerCase()),
-    ].slice(0, 5); // Giới hạn 5 mục gần nhất
+    ].slice(0, 5); //
     setSearchHistory(newHistory);
 
     // Lọc sản phẩm
@@ -93,18 +90,18 @@ const SearchScreen = () => {
       product.drinkname.toLowerCase().includes(searchText.trim().toLowerCase())
     );
     setFilteredProducts(filtered);
-    setSuggestions([]); // Xóa đề xuất khi đã tìm kiếm
+    setSuggestions([]); 
   };
 
   // Xử lý khi nhấn vào một mục trong lịch sử
   const handleHistoryItemPress = (item) => {
     setSearchText(item);
-    // Tự động tìm kiếm khi chọn từ lịch sử
+   
     const filtered = products.filter((product) =>
       product.drinkname.toLowerCase().includes(item.toLowerCase())
     );
     setFilteredProducts(filtered);
-    setSuggestions([]); // Xóa đề xuất
+    setSuggestions([]); 
   };
 
   // Xử lý khi thay đổi text input (đề xuất)
@@ -115,10 +112,10 @@ const SearchScreen = () => {
         product.drinkname.toLowerCase().includes(text.toLowerCase())
       );
       setSuggestions(suggested);
-      setFilteredProducts([]); // Đảm bảo không hiển thị kết quả cũ khi đang gõ đề xuất
+      setFilteredProducts([]); 
     } else {
       setSuggestions([]);
-      setFilteredProducts([]); // Khi text rỗng, xóa cả filteredProducts
+      setFilteredProducts([]);
     }
   };
 
@@ -169,8 +166,8 @@ const SearchScreen = () => {
       style={styles.suggestionItem}
       onPress={() => {
         setSearchText(item.drinkname);
-        setFilteredProducts([item]); // Khi chọn đề xuất, hiển thị ngay kết quả đó
-        setSuggestions([]); // Xóa đề xuất
+        setFilteredProducts([item]); 
+        setSuggestions([]); 
       }}
     >
       <FontAwesome name="search" size={16} color="#888" />
@@ -180,7 +177,7 @@ const SearchScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* Search Bar */}
+  
       <View style={styles.searchBar}>
         <FontAwesome
           name="search"
@@ -221,7 +218,7 @@ const SearchScreen = () => {
             </View>
           )}
 
-          {/* Hiển thị kết quả tìm kiếm */}
+      
           {filteredProducts.length > 0 ? (
             <FlatList
               data={filteredProducts}
@@ -230,7 +227,7 @@ const SearchScreen = () => {
               contentContainerStyle={styles.productList}
             />
           ) : (
-            // Hiển thị lịch sử tìm kiếm hoặc đề xuất chung khi không có kết quả và ô tìm kiếm trống
+    
             <View style={styles.historyContainer}>
               {searchText.length === 0 && searchHistory.length > 0 && (
                 <>
@@ -253,7 +250,7 @@ const SearchScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Đề xuất cho bạn</Text>
                   <FlatList
-                    data={products.slice(0, 5)} // Lấy 5 sản phẩm đầu tiên làm đề xuất
+                    data={products.slice(0, 5)} 
                     renderItem={renderProductItem}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.productList}

@@ -12,12 +12,9 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
-
-// Import Firestore functions
 import { getFirestore, collection, getDocs, doc, deleteDoc } from "firebase/firestore";
-import app from "../../sever/firebase"; // Đảm bảo đường dẫn này chính xác
+import app from "../../sever/firebase"; 
 
-// Initialize Firestore DB
 const db = getFirestore(app);
 
 const DrinksScreen = ({ navigation }) => {
@@ -41,7 +38,7 @@ const DrinksScreen = ({ navigation }) => {
       const filtered = drinks.filter(
         (drink) =>
           drink.drinkname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (drink.category && drink.category.toLowerCase().includes(searchQuery.toLowerCase())) // Thêm kiểm tra drink.category
+          (drink.category && drink.category.toLowerCase().includes(searchQuery.toLowerCase())) 
       );
       setFilteredDrinks(filtered);
     }
@@ -52,9 +49,8 @@ const DrinksScreen = ({ navigation }) => {
     setLoading(true);
     console.log("DrinksScreen: Bắt đầu fetchDrinks.");
     try {
-      // *** COLLECTION NAME: Đảm bảo là "douong" để nhất quán với các thao tác khác trong file này ***
       console.log("DrinksScreen: Chuẩn bị lấy dữ liệu từ collection 'douong'...");
-      const querySnapshot = await getDocs(collection(db, "douong")); // <--- Giữ nguyên "douong"
+      const querySnapshot = await getDocs(collection(db, "douong"));
       console.log(`DrinksScreen: Đã nhận querySnapshot. Số lượng tài liệu: ${querySnapshot.size}`);
 
       const fetchedDrinks = [];
@@ -63,18 +59,17 @@ const DrinksScreen = ({ navigation }) => {
       } else {
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Đảm bảo các trường dữ liệu có sẵn trước khi sử dụng
           fetchedDrinks.push({
             id: doc.id,
-            category: data.category || 'Không rõ', // Gán giá trị mặc định nếu không có
+            category: data.category || 'Không rõ',
             description: data.description || '',
             drinkname: data.drinkname || 'Không tên',
-            image: data.image || 'https://via.placeholder.com/100', // Ảnh placeholder
+            image: data.image || 'https://via.placeholder.com/100', 
             price: typeof data.price === 'number' ? data.price : (parseFloat(data.price) || 0),
             quatiy: typeof data.quatiy === 'number' ? data.quatiy : (parseInt(data.quatiy) || 0),
             start: typeof data.start === 'number' ? data.start : (parseFloat(data.start) || 0),
             status: data.status || 'N/A',
-            active: data.active !== undefined ? data.active : false, // Lấy trạng thái 'active', mặc định là false
+            active: data.active !== undefined ? data.active : false, 
           });
         });
       }
@@ -90,7 +85,7 @@ const DrinksScreen = ({ navigation }) => {
     }
   };
 
-  const handleDeleteDrink = (id, name) => { // Thêm name để hiển thị trong Alert
+  const handleDeleteDrink = (id, name) => { 
     Alert.alert("Xác nhận", `Bạn có chắc chắn muốn xóa đồ uống "${name}"?`, [
       { text: "Hủy", style: "cancel" },
       {
@@ -100,11 +95,10 @@ const DrinksScreen = ({ navigation }) => {
           setLoading(true);
           console.log(`DrinksScreen: Bắt đầu xóa đồ uống với ID: ${id}`);
           try {
-            // *** COLLECTION NAME: Đảm bảo là "douong" để nhất quán với các thao tác khác trong file này ***
-            await deleteDoc(doc(db, "douong", id)); // <--- Giữ nguyên "douong"
+            await deleteDoc(doc(db, "douong", id));
             console.log(`DrinksScreen: Đã xóa thành công đồ uống ID: ${id}`);
             Alert.alert("Thành công", "Đồ uống đã được xóa.");
-            fetchDrinks(); // Tải lại danh sách sau khi xóa
+            fetchDrinks(); 
           } catch (error) {
             console.error(`DrinksScreen: Lỗi khi xóa đồ uống ID ${id}:`, error);
             Alert.alert("Lỗi", `Không thể xóa đồ uống: ${error.message}`);
@@ -120,7 +114,6 @@ const DrinksScreen = ({ navigation }) => {
   const renderDrinkItem = ({ item }) => (
     <TouchableOpacity
       style={styles.drinkItem}
-      // *** SỬA LỖI TRUYỀN THAM SỐ: TRUYỀN drinkId THAY VÌ TOÀN BỘ ITEM ***
       onPress={() => navigation.navigate("DrinkDetails", { drinkId: item.id })}
     >
       <Image
@@ -137,14 +130,13 @@ const DrinksScreen = ({ navigation }) => {
       <View style={styles.drinkActions}>
         <TouchableOpacity
           style={[styles.actionButton, styles.editButton]}
-          // *** SỬA LỖI TRUYỀN THAM SỐ: TRUYỀN drinkId THAY VÌ TOÀN BỘ ITEM ***
           onPress={() => navigation.navigate("EditDrink", { drinkId: item.id })}
         >
           <Ionicons name="pencil" size={20} color="white" />
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDeleteDrink(item.id, item.drinkname)} // Truyền cả tên đồ uống
+          onPress={() => handleDeleteDrink(item.id, item.drinkname)} 
         >
           <Ionicons name="trash" size={20} color="white" />
         </TouchableOpacity>
@@ -284,18 +276,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#8B0000",
   },
-  drinkActions: { // Đổi tên từ 'actions' sang 'drinkActions' để rõ ràng hơn, nếu cần
-    flexDirection: "row", // Đảm bảo các nút nằm ngang
-    alignItems: "center", // Căn giữa các nút theo chiều dọc
-    paddingRight: 10, // Thêm khoảng cách bên phải
+  drinkActions: { 
+    flexDirection: "row", 
+    alignItems: "center",
+    paddingRight: 10, 
   },
   actionButton: {
     padding: 8,
     borderRadius: 6,
-    marginLeft: 5, // Khoảng cách giữa các nút
+    marginLeft: 5,
   },
   editButton: {
-    backgroundColor: "#2196F3", // Màu xanh dương cho nút sửa
+    backgroundColor: "#2196F3",
   },
   deleteButton: {
     backgroundColor: "#F44336",

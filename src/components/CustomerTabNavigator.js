@@ -40,11 +40,6 @@ const HomeStackScreen = () => (
       component={DrinkListScreen}
       options={{ title: "Danh sách đồ uống" }}
     />
-    {/* <HomeStack.Screen
-      name="DrinkDetail"
-      component={DrinkDetailScreen}
-      options={{ title: "Chi tiết đồ uống" }}
-    /> */}
     <HomeStack.Screen
       name="Order"
       component={OrderScreen}
@@ -69,11 +64,6 @@ const SearchStackScreen = () => (
       component={SearchScreen}
       options={{ title: "Tìm kiếm" }}
     />
-    {/* <SearchStack.Screen
-      name="DrinkDetail"
-      component={DrinkDetailScreen}
-      options={{ title: "Chi tiết đồ uống" }}
-    /> */}
     <SearchStack.Screen
        name="Order"
       component={OrderScreen}
@@ -121,7 +111,13 @@ const ProfileStackScreen = () => (
       component={ProfileDetailScreen}
       options={{ title: "Thông tin tài khoản" }}
     ></ProfileStack.Screen>
+     <ProfileStack.Screen
+      name="Cart"
+      component={CartScreen}
+      options={{ title: "Đơn Hàng" }}
+    ></ProfileStack.Screen>
   </ProfileStack.Navigator>
+  
 );
 
 const CustomerTabNavigator = () => {

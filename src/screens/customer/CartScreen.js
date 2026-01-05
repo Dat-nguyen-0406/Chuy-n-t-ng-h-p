@@ -7,9 +7,8 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage"; // Chỉ import một lần
-import { useIsFocused, useNavigation } from "@react-navigation/native"; // Thêm useNavigation
-import { FontAwesome } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage"; 
+import { useIsFocused, useNavigation } from "@react-navigation/native"; 
 import {
   getFirestore,
   collection,
@@ -17,7 +16,7 @@ import {
   where,
   getDocs,
 } from "firebase/firestore";
-import app from "../../sever/firebase"; // Đảm bảo đường dẫn đúng
+import app from "../../sever/firebase"; 
 
 const CartScreen = ({ route }) => {
 
@@ -26,7 +25,7 @@ const CartScreen = ({ route }) => {
   const [activeTab, setActiveTab] = useState("orders");
   
   const isFocused = useIsFocused();
-  const navigation = useNavigation(); // Hook để sử dụng navigation
+  const navigation = useNavigation();
 
   
   useEffect(() => {
@@ -62,10 +61,7 @@ const CartScreen = ({ route }) => {
         querySnapshot.forEach((doc) => {
           ordersData.push({ id: doc.id, ...doc.data() });
         });
-
-        // Sắp xếp theo thời gian tạo mới nhất
         ordersData.sort((a, b) => {
-            // Đảm bảo createdAt là số (timestamp)
             const dateA = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0);
             const dateB = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0);
             return dateB - dateA;
@@ -82,7 +78,6 @@ const CartScreen = ({ route }) => {
       }
     } catch (error) {
       console.error("Error loading orders:", error);
-      // Fallback: Load từ AsyncStorage nếu có lỗi
       const data = await AsyncStorage.getItem("orders");
       setOrders(data ? JSON.parse(data) : []);
       Alert.alert("Lỗi", "Không thể tải đơn hàng. Vui lòng thử lại.");
@@ -107,10 +102,10 @@ const CartScreen = ({ route }) => {
          
           style={[
             styles.tabButton,
-            styles.singleTabButton, // Thêm style mới cho nút duy nhất
+            styles.singleTabButton, 
             activeTab === "orders" && styles.activeTabButton,
           ]}
-          onPress={() => setActiveTab("orders")} // Giữ lại onPress nhưng thực tế nó sẽ luôn là 'orders'
+          onPress={() => setActiveTab("orders")} 
         >
           <Text
             style={[
