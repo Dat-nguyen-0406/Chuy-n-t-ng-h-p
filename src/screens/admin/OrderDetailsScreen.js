@@ -61,8 +61,8 @@ const OrderDetailsScreen = ({ route, navigation }) => {
             }),
             customer: {
               name: data.userName || 'N/A',
-              phone: data.phone || 'N/A',
-              address: data.deliveryAddress || 'N/A',
+              phone: data.phone  || 'N/A',
+              address: data.address || 'N/A',
             },
             items: data.items || [],
             payment: {

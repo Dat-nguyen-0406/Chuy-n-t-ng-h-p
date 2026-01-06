@@ -6,6 +6,7 @@ import {
   CategoriesStackNavigator,
   DrinksStackNavigator,
   OrdersStackNavigator,
+  ChatStackNavigator
 } from "./AdminStackNavigator";
 
 const Tab = createBottomTabNavigator();
@@ -14,7 +15,7 @@ const AdminTabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        tabBarIcon: ({ color, size }) => {
+        tabBarIcon: ({ color, size ,focused}) => {
           let iconName;
 
           if (route.name === "Dashboard") {
@@ -25,6 +26,9 @@ const AdminTabNavigator = () => {
             iconName = "cafe";
           } else if (route.name === "Orders") {
             iconName = "list";
+          }
+          else if (route.name === "Chat") {
+            iconName = focused ? "chatbubble-ellipses" : "chatbubble-ellipses-outline";
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -54,7 +58,13 @@ const AdminTabNavigator = () => {
         component={OrdersStackNavigator}
         options={{ title: "Đơn hàng" }}
       />
+      <Tab.Screen
+        name="Chat"
+        component={ChatStackNavigator}
+        options={{ title: "Hỗ trợ" }}
+      />
     </Tab.Navigator>
+    
   );
 };
 

@@ -65,8 +65,9 @@ const LoginScreen = ({ navigation }) => {
         await AsyncStorage.setItem("userData", JSON.stringify({
           id: foundUser.id,
           fullname: foundUser.fullname,
-          email: foundUser.email,
-          phone: foundUser.phone,
+            email: foundUser.email,
+            phone: foundUser.phone , // Thêm giá trị mặc định nếu null
+          address: foundUser.address ,
           role: foundUser.role,
           password: foundUser.password,
         }));

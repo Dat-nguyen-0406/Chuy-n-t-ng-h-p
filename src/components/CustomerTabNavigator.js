@@ -6,7 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 // Screens
 import HomeScreen from "../screens/customer/HomeScreen";
 import DrinkListScreen from "../screens/customer/DrinkListScreen";
-
+import ChatbotScreen from "../screens/customer/ChatbotScreen"; // Import file vừa tạo
 import SearchScreen from "../screens/customer/SearchScreen";
 import CartScreen from "../screens/customer/CartScreen";
 import ProfileScreen from "../screens/customer/ProfileScreen";
@@ -116,6 +116,10 @@ const ProfileStackScreen = () => (
       component={CartScreen}
       options={{ title: "Đơn Hàng" }}
     ></ProfileStack.Screen>
+    <ProfileStack.Screen
+     name="Chatbot" 
+     component={ChatbotScreen} 
+     options={{ title: "Hỗ trợ trực tuyến" }} />
   </ProfileStack.Navigator>
   
 );

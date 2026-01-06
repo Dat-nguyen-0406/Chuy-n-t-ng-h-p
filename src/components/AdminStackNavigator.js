@@ -23,10 +23,14 @@ import DrinkDetailsScreen from "../screens/admin/DrinkDetailsScreen";
 import OrdersScreen from "../screens/admin/OrdersScreen";
 import OrderDetailsScreen from "../screens/admin/OrderDetailsScreen";
 
+import AdminChatListScreen from "../screens/admin/AdminChatListScreen";
+import AdminChatDetailScreen from "../screens/admin/AdminChatDetailScreen";
+
 const DashboardStack = createStackNavigator();
 const CategoriesStack = createStackNavigator();
 const DrinksStack = createStackNavigator();
 const OrdersStack = createStackNavigator();
+const ChatStack = createStackNavigator();
 
 //quản lý các màn hình
 export const DashboardStackNavigator = () => {
@@ -151,5 +155,26 @@ export const OrdersStackNavigator = () => {
         options={{ title: "Chi tiết đơn hàng" }}
       />
     </OrdersStack.Navigator>
+
+    
   );
 };
+
+export const ChatStackNavigator = () => (
+  <ChatStack.Navigator screenOptions={{
+    headerStyle: { backgroundColor: "#8B0000" },
+    headerTintColor: "#fff",
+    headerTitleStyle: { fontWeight: "bold" },
+  }}>
+    <ChatStack.Screen 
+    name="ChatList" 
+    component={AdminChatListScreen} 
+    options={{ title: "Hỗ trợ khách hàng" }} />
+    <ChatStack.Screen 
+    name="AdminChatDetail" 
+    component={AdminChatDetailScreen} 
+    options={{ 
+    tabBarStyle: { display: 'none' } // Ẩn thanh Tab khi đang nhắn tin chi tiết
+    }} />
+  </ChatStack.Navigator>
+);

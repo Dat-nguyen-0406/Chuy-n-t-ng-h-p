@@ -30,6 +30,33 @@ const DashboardScreen = ({ navigation }) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const markMessagesAsRead = async () => {
+  try {
+    const db = getFirestore(app);
+    // Tìm các tin nhắn gửi đến Admin (receiverId: 'admin') mà chưa đọc (isRead: false)
+    const q = query(
+      collection(db, "chats"), 
+      where("receiverId", "==", "admin"), 
+      where("isRead", "==", false)
+    );
+
+    const querySnapshot = await getDocs(q);
+    
+    // Sử dụng batch để cập nhật nhiều tài liệu cùng lúc
+    const batch = writeBatch(db);
+    querySnapshot.forEach((document) => {
+      const docRef = doc(db, "chats", document.id);
+      batch.update(docRef, { isRead: true });
+    });
+
+    await batch.commit();
+    console.log("Đã đánh dấu tất cả tin nhắn là đã đọc");
+  } catch (error) {
+    console.error("Lỗi khi cập nhật trạng thái đọc:", error);
+  }
+};
+
    useFocusEffect(
     useCallback(() => {
       console.log("DashboardScreen được focus, tải lại dữ liệu ban đầu và thiết lập interval.");
@@ -64,8 +91,12 @@ const DashboardScreen = ({ navigation }) => {
       const dayOfWeek = today.getDay(); 
      
       const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-      const weekStart = new Date(today.setDate(diffToMonday));
+
+      const weekStart = new Date(today);
+      weekStart.setDate(diffToMonday);
       weekStart.setHours(0, 0, 0, 0);
+
+
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
@@ -202,6 +233,8 @@ const DashboardScreen = ({ navigation }) => {
   }
 
   return (
+    <View style={styles.mainContainer}>
+    
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Doanh thu</Text>
@@ -269,9 +302,12 @@ const DashboardScreen = ({ navigation }) => {
       </View>
 
       {/* Placeholder for other sections */}
-      <View style={{ height: 50 }} />
-    </ScrollView>
-  );
+      <View style={{ height: 100 }} />
+      </ScrollView>
+      
+  </View>
+);
+  
 };
 
 const styles = StyleSheet.create({
@@ -449,6 +485,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#777",
   },
+  mainContainer: {
+    flex: 1, 
+    backgroundColor: "#f5f5f5",
+  },
+  
 });
 
 export default DashboardScreen;

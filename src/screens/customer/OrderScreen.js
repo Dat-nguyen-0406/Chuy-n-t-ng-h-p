@@ -20,7 +20,7 @@ import {
   query,
   where,
   onSnapshot,
- 
+ serverTimestamp,
 } from "firebase/firestore";
 import app from "../../sever/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -120,6 +120,8 @@ const OrderScreen = () => {
   
   const [loggedInUserName, setLoggedInUserName] = useState("Khách hàng");
   const [loggedInUserId, setLoggedInUserId] = useState(null);
+  const [loggedInPhone, setLoggedInPhone] = useState("N/A");
+  const [loggedInAddress, setLoggedInAddress] = useState("Chưa có địa chỉ");
 
   const [paymentMethod, setPaymentMethod] = useState("cash");
 
@@ -131,6 +133,8 @@ const OrderScreen = () => {
           const parsedUserData = JSON.parse(userDataString);
           setLoggedInUserName(parsedUserData.fullname || parsedUserData.name || "Khách hàng");
           setLoggedInUserId(parsedUserData.id || null);
+          setLoggedInPhone(parsedUserData.phone || "N/A");
+          setLoggedInAddress(parsedUserData.address || "Chưa có địa chỉ");
         } else {
           setLoggedInUserName("Khách hàng");
           setLoggedInUserId(null);
@@ -228,6 +232,15 @@ const OrderScreen = () => {
         return;
       }
 
+      if (!loggedInAddress || loggedInAddress === "Chưa có địa chỉ" || loggedInAddress === "N/A") {
+    Alert.alert(
+      "Thiếu thông tin",
+      "Vui lòng cập nhật địa chỉ giao hàng trong trang cá nhân trước khi đặt hàng.",
+      [{ text: "Đã hiểu" }]
+    );
+    return; 
+  }
+
      
       if (!drink) {
         Alert.alert("Lỗi", "Thông tin đồ uống chưa được tải.");
@@ -254,10 +267,12 @@ const OrderScreen = () => {
           },
         ],
         status: "Đang xử lý",
-        createdAt: new Date().getTime(),
-        updatedAt: new Date().getTime(),
+        createdAt: serverTimestamp(), 
+        updatedAt: serverTimestamp(),
         total: parseInt(drink.price) * quantity,
         userName: loggedInUserName,
+        phone: loggedInPhone,   
+        address: loggedInAddress,
       };
 
     

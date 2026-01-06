@@ -27,6 +27,7 @@ const ProfileDetail = () => {
     fullname: "",
     email: "",
     phone: "",
+    address: "",
     password: "", 
   });
   const [editMode, setEditMode] = useState(false);
@@ -51,6 +52,7 @@ const ProfileDetail = () => {
             fullname: data.fullname || "",
             email: data.email || "",
             phone: data.phone || "",
+            address: data.address || "",
             password: data.password || "", 
           });
         } else {
@@ -94,6 +96,7 @@ const ProfileDetail = () => {
       const updateData = {
         fullname: String(userData.fullname.trim()),
         phone: String(userData.phone.trim()),
+        address: userData.address ? userData.address.trim() : "",
       };
 
       console.log("Đang cố gắng cập nhật người dùng ID:", userData.id);
@@ -239,6 +242,7 @@ const ProfileDetail = () => {
           fullname: firebaseData.fullname || "",
           email: firebaseData.email || "",
           phone: firebaseData.phone || "",
+          address: firebaseData.address || "",
           password: firebaseData.password || "", 
         };
 
@@ -333,6 +337,21 @@ const ProfileDetail = () => {
             <Text style={styles.infoText}>{userData.phone}</Text>
           )}
         </View>
+        <View style={styles.infoItem}>
+          <Text style={styles.infoLabel}>Địa chỉ giao hàng</Text>
+          {editMode ? (
+            <TextInput
+              style={styles.input}
+              value={userData.address}
+              onChangeText={(text) => setUserData({ ...userData, address: text })}
+              placeholder="Nhập địa chỉ của bạn"
+              multiline={true} // Cho phép nhập nhiều dòng nếu địa chỉ dài
+            />
+          ) : (
+            <Text style={styles.infoText}>{userData.address || "Chưa thiết lập địa chỉ"}</Text>
+          )}
+        </View>
+      
       </View>
 
       <TouchableOpacity

@@ -83,10 +83,14 @@ const ProfileScreen = () => {
   const navigateToReviews = () => {
     navigation.navigate("Reviews");
   };
-
+  const navigateToChatbot = () => {
+  navigation.navigate("Chatbot");
+  };
   const showPromotion = () => {
     setShowPromoModal(true);
   };
+  
+  
 
   return (
     <ScrollView style={styles.container}>
@@ -189,7 +193,7 @@ const ProfileScreen = () => {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={navigateToChatbot}>
           <Ionicons name="help-outline" size={24} color="#8B4513" />
           <Text style={styles.menuItemText}>Trợ giúp & Hỗ trợ</Text>
           <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
