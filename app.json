@@ -18,6 +18,7 @@
         "NSPhotoLibraryUsageDescription": "Cho phép ứng dụng truy cập thư viện ảnh của bạn để chọn hình ảnh cho đồ uống."
       }
     },
+    
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/icon.png",
