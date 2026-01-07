@@ -33,7 +33,7 @@ const AdminTabNavigator = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: "#8B0000",
+        tabBarActiveTintColor: "#0f367aff",
         tabBarInactiveTintColor: "gray",
         headerShown: false,
       })}

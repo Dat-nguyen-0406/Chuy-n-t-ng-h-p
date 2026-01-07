@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   bubble: { maxWidth: '80%', padding: 12, borderRadius: 18, marginBottom: 10 },
   adminBubble: { 
     alignSelf: 'flex-end', 
-    backgroundColor: '#8B4513', // Đổi về màu nâu giống theme của bạn
+    backgroundColor: '#36568eff', // Đổi về màu nâu giống theme của bạn
     borderBottomRightRadius: 2 
   },
   userBubble: { 
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   },
   sendButton: { 
     marginLeft: 10, 
-    backgroundColor: '#8B4513', 
+    backgroundColor: '#0f367aff', 
     width: 44, 
     height: 44, 
     borderRadius: 22, 

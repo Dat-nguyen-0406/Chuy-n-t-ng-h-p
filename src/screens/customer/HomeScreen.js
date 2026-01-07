@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import { useNavigation, useIsFocused } from "@react-navigation/native"; 
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { LinearGradient } from 'expo-linear-gradient';
 
 const HomeScreen = () => {
   const [coffeeItems, setCoffeeItems] = useState([]);
@@ -24,14 +25,13 @@ const HomeScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); 
+  const isFocused = useIsFocused();
   
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     console.log("HomeScreen: Bắt đầu fetchData.");
     try {
-     
       const categorySnapshot = await getDocs(collection(db, "danhmuc"));
       const fetchedCategories = categorySnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -39,7 +39,6 @@ const HomeScreen = () => {
       }));
       setCategories([{ id: "all", name: "Tất cả" }, ...fetchedCategories]);
 
-      
       const coffeeSnapshot = await getDocs(collection(db, "douong"));
       const coffeeItemsData = coffeeSnapshot.docs.map((doc) => ({
         id: doc.id,
@@ -48,7 +47,6 @@ const HomeScreen = () => {
       setCoffeeItems(coffeeItemsData);
       setFilteredItems(coffeeItemsData);
 
-      
       const headerSnapshot = await getDocs(collection(db, "photo"));
       if (!headerSnapshot.empty) {
         const headerDoc = headerSnapshot.docs[0].data();
@@ -57,10 +55,10 @@ const HomeScreen = () => {
           image: headerDoc.Image || "https://via.placeholder.com/400x200",
         });
       } else {
-         setHeaderData({
-            title: "Cà phê chất lượng",
-            image: "https://via.placeholder.com/400x200", 
-          });
+        setHeaderData({
+          title: "Cà phê chất lượng",
+          image: "https://via.placeholder.com/400x200",
+        });
       }
 
       setPromotions([
@@ -112,15 +110,16 @@ const HomeScreen = () => {
     <View style={styles.headerContainer}>
       {headerData ? (
         <>
-         
           <Text style={styles.mainTitle}>{headerData.title}</Text>
-          <Image
-            source={{ uri: headerData.image }}
-            style={styles.headerImage}
-            resizeMode="cover"
-          />
+          <View style={styles.imageWrapper}>
+            <Image
+              source={{ uri: headerData.image }}
+              style={styles.headerImage}
+              resizeMode="cover"
+            />
+            <View style={styles.imageOverlay} />
+          </View>
 
-          {/* Phần danh mục */}
           <View style={styles.categorySection}>
             <Text style={styles.sectionTitle}>Danh mục</Text>
             <View style={styles.categoryGrid}>
@@ -135,6 +134,7 @@ const HomeScreen = () => {
                       : null,
                   ]}
                   onPress={() => setSelectedCategory(cat)}
+                  activeOpacity={0.7}
                 >
                   <Text
                     style={[
@@ -145,7 +145,6 @@ const HomeScreen = () => {
                         : null,
                     ]}
                   >
-                    {" "}
                     {cat.name}
                   </Text>
                 </TouchableOpacity>
@@ -167,20 +166,20 @@ const HomeScreen = () => {
     for (let i = 1; i <= 5; i++) {
       if (i <= fullStars) {
         stars.push(
-          <FontAwesome key={i} name="star" size={16} color="#FFD700" />
+          <FontAwesome key={i} name="star" size={14} color="#FFB800" />
         );
       } else if (i === fullStars + 1 && hasHalfStar) {
         stars.push(
           <FontAwesome
             key={i}
             name="star-half-full"
-            size={16}
-            color="#FFD700"
+            size={14}
+            color="#FFB800"
           />
         );
       } else {
         stars.push(
-          <FontAwesome key={i} name="star-o" size={16} color="#FFD700" />
+          <FontAwesome key={i} name="star-o" size={14} color="#E0E0E0" />
         );
       }
     }
@@ -188,7 +187,7 @@ const HomeScreen = () => {
     return (
       <View style={styles.ratingContainer}>
         {stars}
-        <Text style={styles.ratingText}>({rating})</Text>
+        <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
       </View>
     );
   };
@@ -197,37 +196,47 @@ const HomeScreen = () => {
     <TouchableOpacity
       style={styles.itemContainer}
       onPress={() => navigation.navigate("Order", { drinkId: item.id })}
+      activeOpacity={0.8}
     >
-      <View style={styles.itemContent}>
-        <Image source={{ uri: item.image }} style={styles.itemImage} />
+      <View style={styles.itemCard}>
+        <View style={styles.imageContainer}>
+          <Image source={{ uri: item.image }} style={styles.itemImage} />
+        </View>
         <View style={styles.itemDetails}>
-          <Text style={styles.itemName}>{item.drinkname}</Text>
-          <Text style={styles.itemPrice}>{item.price}đ</Text>
-          {renderStars(item.start || 0)}
+          <Text style={styles.itemName} numberOfLines={2}>{item.drinkname}</Text>
+          <View style={styles.priceRatingRow}>
+            <Text style={styles.itemPrice}>{item.price}đ</Text>
+            {renderStars(item.start || 0)}
+          </View>
         </View>
       </View>
-      <View style={styles.divider} />
     </TouchableOpacity>
   );
 
   const renderPromotion = ({ item }) => (
-    <View style={styles.promotionContainer}>
-      <Image
-        source={{ uri: item.image }}
-        style={styles.promotionImage}
-        resizeMode="cover"
-      />
-      <View style={styles.promotionTextContainer}>
-        <Text style={styles.promotionTitle}>{item.text}</Text>
-        <Text style={styles.promotionDescription}>{item.description}</Text>
+    <TouchableOpacity style={styles.promotionContainer} activeOpacity={0.9}>
+      <View style={styles.promotionCard}>
+        <View style={styles.promotionImageWrapper}>
+          <Image
+            source={{ uri: item.image }}
+            style={styles.promotionImage}
+            resizeMode="cover"
+          />
+        </View>
+        <View style={styles.promotionTextContainer}>
+          <Text style={styles.promotionTitle}>{item.text}</Text>
+          <Text style={styles.promotionDescription}>{item.description}</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={16} color="#0f367aff" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#0f367aff" />
+        <Text style={styles.loadingSubtext}>Đang tải...</Text>
       </View>
     );
   }
@@ -235,8 +244,9 @@ const HomeScreen = () => {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Lỗi khi tải dữ liệu: {error}</Text>
-        <Text>Vui lòng kiểm tra kết nối hoặc liên hệ quản trị viên</Text>
+        <FontAwesome name="exclamation-circle" size={48} color="#FF6B6B" />
+        <Text style={styles.errorText}>Lỗi khi tải dữ liệu</Text>
+        <Text style={styles.errorSubtext}>Vui lòng thử lại sau</Text>
       </View>
     );
   }
@@ -255,6 +265,7 @@ const HomeScreen = () => {
             keyExtractor={(item) => item.id.toString()}
           />
         }
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -263,152 +274,220 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    paddingHorizontal: 15,
-    paddingTop: 10,
-    paddingBottom: 20,
-    marginBottom: 20,
+    backgroundColor: "#F8F9FA",
   },
   headerContainer: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
   },
   mainTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginTop: 20,
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#1a1a1a",
+    marginTop: 10,
+    marginBottom: 15,
+    letterSpacing: 0.5,
+  },
+  imageWrapper: {
+    position: "relative",
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
   },
   headerImage: {
     width: "100%",
-    height: 200,
-    borderRadius: 8,
-    marginVertical: 10,
+    height: 180,
   },
-  searchContainer: {
-    marginVertical: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    paddingHorizontal: 15,
-    fontSize: 16,
+  imageOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "40%",
+    backgroundColor: "rgba(0,0,0,0.1)",
   },
   categorySection: {
-    marginTop: 15,
+    marginTop: 5,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 15,
+    color: "#1a1a1a",
+    letterSpacing: 0.3,
   },
   categoryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 15,
   },
   categoryItem: {
     width: "23%",
-    paddingVertical: 10,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   selectedCategoryItem: {
-    backgroundColor: "#8B4513",
+    backgroundColor: "#0f367aff",
+    borderColor: "#0f367aff",
+    shadowColor: "#0f367aff",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   categoryText: {
-    fontSize: 14,
-    color: "#333",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#555",
   },
   selectedCategoryText: {
-    color: "white",
+    color: "#fff",
+    fontWeight: "700",
   },
   itemContainer: {
+    paddingHorizontal: 20,
     marginBottom: 15,
   },
-  itemContent: {
+  itemCard: {
     flexDirection: "row",
-    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  imageContainer: {
+    width: 100,
+    height: 100,
+    backgroundColor: "#F5F5F5",
   },
   itemImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
+    width: "100%",
+    height: "100%",
   },
   itemDetails: {
     flex: 1,
+    padding: 12,
+    justifyContent: "space-between",
   },
   itemName: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
+    fontWeight: "600",
+    color: "#1a1a1a",
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  priceRatingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   itemPrice: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0f367aff",
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 4,
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#666",
-    marginLeft: 5,
+    marginLeft: 4,
+    fontWeight: "600",
   },
   promotionContainer: {
+    paddingHorizontal: 20,
+    marginVertical: 15,
+    marginBottom: 30,
+  },
+  promotionCard: {
     flexDirection: "row",
-    backgroundColor: "#FFF",
-    borderRadius: 12,
-    marginVertical: 10,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 16,
     alignItems: "center",
+    shadowColor: "#0f367aff",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderLeftWidth: 4,
+    borderLeftColor: "#0f367aff",
+  },
+  promotionImageWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#F5F5F5",
   },
   promotionImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: "100%",
+    height: "100%",
   },
   promotionTextContainer: {
     flex: 1,
-    marginLeft: 15,
+    marginLeft: 16,
   },
   promotionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: "#6F4E37",
-    marginBottom: 5,
+    fontWeight: "700",
+    color: "#0f367aff",
+    marginBottom: 4,
   },
   promotionDescription: {
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
   },
-
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#F8F9FA",
+  },
+  loadingSubtext: {
+    marginTop: 12,
+    fontSize: 15,
+    color: "#666",
+    fontWeight: "500",
   },
   errorText: {
-    color: "red",
-    marginBottom: 10,
+    color: "#FF6B6B",
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    color: "#999",
+    fontSize: 14,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
   },
 });
 

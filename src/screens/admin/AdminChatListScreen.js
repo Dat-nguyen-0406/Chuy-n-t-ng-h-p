@@ -76,7 +76,7 @@ const ChatListScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   roomItem: { flexDirection: "row", padding: 15, borderBottomWidth: 1, borderBottomColor: "#eee", alignItems: "center" },
-  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#8B4513", justifyContent: "center", alignItems: "center" },
+  avatar: { width: 50, height: 50, borderRadius: 25, backgroundColor: "#0f367aff", justifyContent: "center", alignItems: "center" },
   avatarText: { color: "#fff", fontSize: 20, fontWeight: "bold" },
   info: { flex: 1, marginLeft: 15 },
   userName: { fontSize: 16, fontWeight: "bold" },

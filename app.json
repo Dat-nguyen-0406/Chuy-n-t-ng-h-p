@@ -15,7 +15,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "Cho phép ứng dụng truy cập thư viện ảnh của bạn để chọn hình ảnh cho đồ uống."
+        "NSPhotoLibraryUsageDescription": "Cho phép ứng dụng truy cập thư viện ảnh của bạn để chọn hình ảnh cho đồ uống.",
+        "NSLocationWhenInUseUsageDescription": "Ứng dụng cần truy cập vị trí của bạn để theo dõi đơn hàng."
       }
     },
     
@@ -25,9 +26,12 @@
         "backgroundColor": "#ffffff"
       },
         "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES" 
+        
       ]
     },
     "web": {

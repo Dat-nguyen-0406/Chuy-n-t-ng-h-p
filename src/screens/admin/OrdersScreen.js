@@ -9,110 +9,107 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
-  Alert
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
-import { getFirestore, collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import app from '../../sever/firebase'; 
+import {
+  getFirestore,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+} from 'firebase/firestore';
+import app from '../../sever/firebase';
+
 const OrdersScreen = ({ navigation }) => {
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('all'); 
+  const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const isFocused = useIsFocused();
-
   const db = getFirestore(app);
 
   useEffect(() => {
     let unsubscribe;
     if (isFocused) {
-      setIsLoading(true);
-      const ordersRef = collection(db, 'orders');
-      const q = query(ordersRef, orderBy('createdAt', 'desc'));
-
-      unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const ordersData = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const createdAt = data.createdAt && typeof data.createdAt.toDate === 'function'
-            ? data.createdAt.toDate().getTime()
-            : (data.createdAt || new Date().getTime()); 
-          
-          ordersData.push({
-            id: doc.id,
-            ...data,
-            createdAt: createdAt, 
-            customer: data.userName || 'Khách hàng',
-            phone: data.phone || 'N/A',
-            items: data.items || [],          
-            status: data.status || 'Không xác định',
+      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+      unsubscribe = onSnapshot(
+        q,
+        snap => {
+          const data = snap.docs.map(doc => {
+            const d = doc.data();
+            return {
+              id: doc.id,
+              ...d,
+              createdAt: d.createdAt?.toDate?.().getTime() || Date.now(),
+              customer: d.userName || 'Khách hàng',
+              phone: d.phone || 'N/A',
+              items: d.items || [],
+              status: d.status || 'Đang xử lý',
+            };
           });
-        });
-        setOrders(ordersData);
-        setIsLoading(false);
-      }, (error) => {
-        console.error("Lỗi khi tải đơn hàng:", error);
-        Alert.alert("Lỗi", "Không thể tải danh sách đơn hàng.");
-        setIsLoading(false);
-      });
+          setOrders(data);
+          setIsLoading(false);
+        },
+        () => {
+          Alert.alert('Lỗi', 'Không thể tải đơn hàng');
+          setIsLoading(false);
+        }
+      );
     }
-    
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
+    return () => unsubscribe && unsubscribe();
   }, [isFocused]);
 
   useEffect(() => {
-    filterAndSearchOrders(orders, statusFilter, searchQuery);
-  }, [orders, statusFilter, searchQuery]); 
+    let temp = orders;
 
-  const filterAndSearchOrders = (allOrders, currentStatusFilter, currentSearchQuery) => {
-    let tempOrders = allOrders;
-
-    if (currentStatusFilter !== 'all') {
-      tempOrders = tempOrders.filter(order => order.status === currentStatusFilter);
+    if (statusFilter !== 'all') {
+      temp = temp.filter(o => o.status === statusFilter);
     }
 
-   
-    if (currentSearchQuery.trim() !== '') {
-      const lowercasedSearchText = currentSearchQuery.toLowerCase();
-      tempOrders = tempOrders.filter(
-        order =>
-          String(order.id).toLowerCase().includes(lowercasedSearchText) ||
-          (order.customer && order.customer.toLowerCase().includes(lowercasedSearchText)) ||
-          (order.phone && order.phone.includes(lowercasedSearchText))
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      temp = temp.filter(
+        o =>
+          o.id.toLowerCase().includes(q) ||
+          o.customer.toLowerCase().includes(q) ||
+          o.phone.includes(q)
       );
     }
 
-    setFilteredOrders(tempOrders);
-  };
+    setFilteredOrders(temp);
+  }, [orders, statusFilter, searchQuery]);
 
-  const getStatusStyle = (status) => {
+  const statusColor = status => {
     switch (status) {
-      case 'Đã hoàn thành': return { backgroundColor: '#4CAF50', color: '#fff' }; 
-      case 'Đang giao': return { backgroundColor: '#2196F3', color: '#fff' }; 
-      case 'Đang xử lý': return { backgroundColor: '#FF9800', color: '#fff' }; 
-      case 'Đã hủy': return { backgroundColor: '#F44336', color: '#fff' }; 
-      default: return { backgroundColor: '#757575', color: '#fff' }; 
+      case 'Đã hoàn thành':
+        return '#16a34a';
+      case 'Đang giao':
+        return '#2563eb';
+      case 'Đang xử lý':
+        return '#f59e0b';
+      case 'Đã hủy':
+        return '#dc2626';
+      default:
+        return '#6b7280';
     }
   };
 
-  const renderStatusTab = (status, label) => (
+  const renderTab = (value, label) => (
     <TouchableOpacity
+      key={value}
       style={[
-        styles.statusTab,
-        statusFilter === status && styles.activeStatusTab
+        styles.tab,
+        statusFilter === value && styles.tabActive,
       ]}
-      onPress={() => setStatusFilter(status)}
+      onPress={() => setStatusFilter(value)}
     >
       <Text
         style={[
-          styles.statusTabText,
-          statusFilter === status && styles.activeStatusTabText
+          styles.tabText,
+          statusFilter === value && styles.tabTextActive,
         ]}
       >
         {label}
@@ -120,33 +117,45 @@ const OrdersScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderOrderItem = ({ item }) => {
-    const statusStyles = getStatusStyle(item.status);
-    const orderDate = new Date(item.createdAt);
-    const timeString = orderDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    const dateString = orderDate.toLocaleDateString('vi-VN');
-
+  const renderItem = ({ item }) => {
+    const date = new Date(item.createdAt);
     return (
       <TouchableOpacity
-        style={styles.orderItem}
-        onPress={() => navigation.navigate('OrderDetails', { orderId: item.id })}
+        style={styles.card}
+        onPress={() =>
+          navigation.navigate('OrderDetails', { orderId: item.id })
+        }
       >
-        <View style={styles.orderHeader}>
-          <Text style={styles.orderNumber}>Mã đơn: {String(item.id).slice(-6).toUpperCase()}</Text>
-          <View style={[styles.orderStatus, { backgroundColor: statusStyles.backgroundColor }]}>
-            <Text style={[styles.orderStatusText, { color: statusStyles.color }]}>{item.status}</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.orderId}>
+            #{item.id.slice(-6).toUpperCase()}
+          </Text>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: statusColor(item.status) },
+            ]}
+          >
+            <Text style={styles.statusText}>{item.status}</Text>
           </View>
         </View>
 
-        <View style={styles.orderInfo}>
-          <Text style={styles.customerName}>Khách hàng: {item.customer}</Text>
-          <Text style={styles.orderPhone}>SĐT: {item.phone}</Text>
-        </View>
+        <Text style={styles.customer}>{item.customer}</Text>
+        <Text style={styles.phone}>{item.phone}</Text>
 
-        <View style={styles.orderMeta}>
-          <Text style={styles.orderTime}>{timeString} - {dateString}</Text>
-          <Text style={styles.orderDetails}>
-            {item.items ? item.items.length : 0} món · {item.total ? item.total.toLocaleString('vi-VN') : '0'}đ
+        <View style={styles.divider} />
+
+        <View style={styles.footer}>
+          <Text style={styles.time}>
+            {date.toLocaleTimeString('vi-VN', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}{' '}
+            · {date.toLocaleDateString('vi-VN')}
+          </Text>
+          <Text style={styles.total}>
+            {item.items.length} món ·{' '}
+            {item.total?.toLocaleString('vi-VN') || 0}đ
           </Text>
         </View>
       </TouchableOpacity>
@@ -155,8 +164,8 @@ const OrdersScreen = ({ navigation }) => {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#6F4E37" />
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#16a34a" />
         <Text style={styles.loadingText}>Đang tải đơn hàng...</Text>
       </View>
     );
@@ -164,186 +173,120 @@ const OrdersScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+      {/* Search */}
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={20} color="#9ca3af" />
         <TextInput
+          placeholder="Tìm theo mã, khách hàng, SĐT..."
           style={styles.searchInput}
-          placeholder="Tìm kiếm theo khách hàng, mã đơn, SĐT..."
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
       </View>
 
-      <View style={styles.statusTabContainer}>
-        {renderStatusTab('all', 'Tất cả')}
-        {renderStatusTab('Đang xử lý', 'Đang xử lý')}
-        {renderStatusTab('Đang giao', 'Đang giao')}
-        {renderStatusTab('Đã hoàn thành', 'Hoàn thành')}
-        {renderStatusTab('Đã hủy', 'Đã hủy')}
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        {renderTab('all', 'Tất cả')}
+        {renderTab('Đang xử lý', 'Xử lý')}
+        {renderTab('Đang giao', 'Giao')}
+        {renderTab('Đã hoàn thành', 'Hoàn thành')}
+        {renderTab('Đã hủy', 'Hủy')}
       </View>
 
-      {filteredOrders.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Không tìm thấy đơn hàng</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={filteredOrders}
-          keyExtractor={(item) => item.id}
-          renderItem={renderOrderItem}
-          contentContainerStyle={styles.list}
-        />
-      )}
+      <FlatList
+        data={filteredOrders}
+        keyExtractor={i => i.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 };
 
+
+
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
-  },
-  searchContainer: {
+  container: { flex: 1, backgroundColor: '#f9fafb', padding: 16 },
+
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 8, color: '#6b7280' },
+
+  searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    margin: 16,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-  },
-  searchIcon: {
-    marginRight: 8,
+    backgroundColor: '#fff',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginBottom: 12,
+    elevation: 3,
   },
   searchInput: {
+    marginLeft: 8,
     flex: 1,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 15,
   },
-  statusTabContainer: {
+
+  tabs: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    marginBottom: 16,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    marginBottom: 12,
     overflow: 'hidden',
   },
-  statusTab: {
+  tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
     alignItems: 'center',
-    borderBottomWidth: 2, 
-    borderBottomColor: 'transparent', 
   },
-  activeStatusTab: {
-    borderBottomColor: '#6F4E37',
+  tabActive: {
+    backgroundColor: '#16a34a',
   },
-  statusTabText: {
-    fontSize: 13, 
-    color: '#666',
-    fontWeight: '500',
-    textAlign: 'center',
+  tabText: {
+    fontSize: 13,
+    color: '#6b7280',
   },
-  activeStatusTabText: {
-    color: '#6F4E37', 
-    fontWeight: 'bold',
+  tabTextActive: {
+    color: '#fff',
+    fontWeight: '600',
   },
-  list: {
-    paddingHorizontal: 16,
-    paddingBottom: 20, 
-  },
-  orderItem: {
-    backgroundColor: 'white',
-    borderRadius: 8,
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
     padding: 16,
     marginBottom: 12,
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
   },
-  orderHeader: {
+  cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
-  orderNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  orderStatus: {
-    paddingHorizontal: 8,
+  orderId: { fontWeight: '700', fontSize: 15 },
+  statusBadge: {
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 999,
   },
-  orderStatusText: {
-    fontSize: 12,
-    color: 'white', 
-    fontWeight: '500',
+  statusText: { color: '#fff', fontSize: 12 },
+
+  customer: { marginTop: 6, fontSize: 16, fontWeight: '600' },
+  phone: { color: '#6b7280', marginTop: 2 },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#e5e7eb',
+    marginVertical: 10,
   },
-  orderInfo: {
-    marginBottom: 8,
-  },
-  customerName: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#444',
-  },
-  orderPhone: {
-    fontSize: 14,
-    color: '#666',
-  },
-  orderMeta: {
+
+  footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 8,
   },
-  orderTime: {
-    fontSize: 13,
-    color: '#777',
-  },
-  orderDetails: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6F4E37', 
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: '#999',
-    textAlign: 'center',
-  },
+  time: { color: '#6b7280', fontSize: 12 },
+  total: { fontWeight: '700', color: '#16a34a' },
 });
 
 export default OrdersScreen;

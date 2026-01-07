@@ -38,7 +38,7 @@ export const DashboardStackNavigator = () => {
     <DashboardStack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -67,7 +67,7 @@ export const CategoriesStackNavigator = () => {
     <CategoriesStack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -100,7 +100,7 @@ export const DrinksStackNavigator = () => {
       initialRouteName="DrinksList"
       screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -137,7 +137,7 @@ export const OrdersStackNavigator = () => {
     <OrdersStack.Navigator
      screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -162,7 +162,7 @@ export const OrdersStackNavigator = () => {
 
 export const ChatStackNavigator = () => (
   <ChatStack.Navigator screenOptions={{
-    headerStyle: { backgroundColor: "#8B0000" },
+    headerStyle: { backgroundColor: "#0f367aff" },
     headerTintColor: "#fff",
     headerTitleStyle: { fontWeight: "bold" },
   }}>

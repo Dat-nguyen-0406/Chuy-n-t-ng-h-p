@@ -10,12 +10,14 @@ import {
   ScrollView,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getFirestore, doc, updateDoc, getDoc } from "firebase/firestore";
+import { LinearGradient } from 'expo-linear-gradient';
 import app from "../../sever/firebase";
 
 const db = getFirestore(app);
@@ -28,7 +30,7 @@ const ProfileDetail = () => {
     email: "",
     phone: "",
     address: "",
-    password: "", 
+    password: "",
   });
   const [editMode, setEditMode] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -36,30 +38,33 @@ const ProfileDetail = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigation = useNavigation();
   const route = useRoute();
 
   useEffect(() => {
     const fetchUserData = async () => {
-      console.log("--- Bắt đầu tải dữ liệu người dùng từ AsyncStorage ---"); 
+      console.log("--- Bắt đầu tải dữ liệu người dùng từ AsyncStorage ---");
       try {
         const userDataString = await AsyncStorage.getItem("userData");
         if (userDataString) {
           const data = JSON.parse(userDataString);
-          console.log("Dữ liệu người dùng đọc được từ AsyncStorage:", data); 
+          console.log("Dữ liệu người dùng đọc được từ AsyncStorage:", data);
           setUserData({
             id: data.id || "",
             fullname: data.fullname || "",
             email: data.email || "",
             phone: data.phone || "",
             address: data.address || "",
-            password: data.password || "", 
+            password: data.password || "",
           });
         } else {
-          console.log("Không tìm thấy dữ liệu người dùng trong AsyncStorage."); 
+          console.log("Không tìm thấy dữ liệu người dùng trong AsyncStorage.");
         }
       } catch (error) {
-        console.error("Lỗi khi tải dữ liệu người dùng từ AsyncStorage:", error); 
+        console.error("Lỗi khi tải dữ liệu người dùng từ AsyncStorage:", error);
       }
     };
 
@@ -67,31 +72,24 @@ const ProfileDetail = () => {
   }, []);
 
   const handleSave = async () => {
-  console.log("--- Bắt đầu xử lý Lưu thông tin ---");
-  console.log("Chế độ chỉnh sửa:", editMode);
-  console.log("userData hiện tại trước khi kiểm tra:", userData); 
+    console.log("--- Bắt đầu xử lý Lưu thông tin ---");
+    
+    if (!userData.fullname.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập họ và tên");
+      return;
+    }
 
-  if (!userData.fullname.trim()) {
-    Alert.alert("Lỗi", "Vui lòng nhập họ và tên");
-    console.log("Lỗi: Họ và tên rỗng.");
-    return;
-  }
+    if (!userData.phone.trim()) {
+      Alert.alert("Lỗi", "Vui lòng nhập số điện thoại");
+      return;
+    }
 
-  if (!userData.phone.trim()) {
-    Alert.alert("Lỗi", "Vui lòng nhập số điện thoại");
-    console.log("Lỗi: Số điện thoại rỗng.");
-    return;
-  }
-
-
-  if (!userData.id || userData.id.toString().trim() === "" || userData.id === 0) { 
-    Alert.alert("Lỗi", "Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
-    console.log("Lỗi: userData.id không hợp lệ (trước setState isLoading):", userData.id);
-    return;
-  }
+    if (!userData.id || userData.id.toString().trim() === "" || userData.id === 0) {
+      Alert.alert("Lỗi", "Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
+      return;
+    }
 
     setIsLoading(true);
-    console.log("isLoading set to true (handleSave)");
     try {
       const updateData = {
         fullname: String(userData.fullname.trim()),
@@ -100,98 +98,69 @@ const ProfileDetail = () => {
       };
 
       console.log("Đang cố gắng cập nhật người dùng ID:", userData.id);
-      console.log("Dữ liệu cập nhật lên Firebase:", updateData); 
 
       const userDocRef = doc(db, "users", userData.id.toString());
-      console.log("Đang gửi yêu cầu updateDoc lên Firebase..."); 
       await updateDoc(userDocRef, updateData);
-      console.log("updateDoc Firebase thành công."); 
 
       const updatedUserData = {
         ...userData,
         fullname: userData.fullname.trim(),
         phone: userData.phone.trim(),
       };
-      console.log("Đang cập nhật userData trong AsyncStorage:", updatedUserData);
       await AsyncStorage.setItem("userData", JSON.stringify(updatedUserData));
-      console.log("Cập nhật AsyncStorage thành công."); 
 
       setUserData(updatedUserData);
       setEditMode(false);
       Alert.alert("Thành công", "Thông tin đã được cập nhật");
-      console.log("Thông tin đã được cập nhật thành công.");
     } catch (error) {
       console.error("Lỗi cập nhật thông tin người dùng:", error);
-      console.error("Chi tiết lỗi:", error.message); 
 
       if (error.message.includes("permission-denied")) {
         Alert.alert("Lỗi", "Không có quyền cập nhật thông tin này. Vui lòng kiểm tra quyền Firebase.");
-        console.log("Lỗi: Quyền Firebase bị từ chối."); 
       } else if (error.message.includes("not-found")) {
         Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng trên Firebase. ID có thể sai.");
-        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase."); 
       } else {
-        Alert.alert("Lỗi", "Không thể cập nhật thông tin. Vui lòng thử lại. Lỗi không xác định.");
-        console.log("Lỗi: Lỗi không xác định khi cập nhật thông tin."); 
+        Alert.alert("Lỗi", "Không thể cập nhật thông tin. Vui lòng thử lại.");
       }
     } finally {
       setIsLoading(false);
-      console.log("isLoading set to false (handleSave)");
-      console.log("--- Kết thúc xử lý Lưu thông tin ---"); 
     }
   };
 
   const handleChangePassword = async () => {
     console.log("--- Bắt đầu xử lý Đổi mật khẩu ---");
-    console.log("Mật khẩu hiện tại (input):", currentPassword);
-    console.log("Mật khẩu mới (input):", newPassword);
-    console.log("Xác nhận mật khẩu (input):", confirmPassword);
-    console.log("Mật khẩu trong state (userData.password):", userData.password);
 
     if (newPassword !== confirmPassword) {
       Alert.alert("Lỗi", "Mật khẩu mới không khớp");
-      console.log("Lỗi: Mật khẩu mới không khớp.");
       return;
     }
 
     if (newPassword.length < 6) {
       Alert.alert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự");
-      console.log("Lỗi: Mật khẩu mới quá ngắn.");
       return;
     }
 
     if (String(currentPassword).trim() !== String(userData.password).trim()) {
       Alert.alert("Lỗi", "Mật khẩu hiện tại không đúng");
-      console.log("Lỗi: Mật khẩu hiện tại không đúng.");
       return;
     }
 
-
-      if (!userData.id || String(userData.id).trim() === "") { 
+    if (!userData.id || String(userData.id).trim() === "") {
       Alert.alert("Lỗi", "Không tìm thấy ID người dùng. Vui lòng đăng nhập lại.");
-      console.log("Lỗi: userData.id không hợp lệ (đổi mật khẩu):", userData.id);
       return;
     }
 
     setIsLoading(true);
-    console.log("isLoading set to true (handleChangePassword)");
     try {
       const updateData = {
-        password: String(newPassword), 
+        password: String(newPassword),
       };
 
-      console.log("Đang cố gắng cập nhật mật khẩu cho người dùng ID:", userData.id);
-      console.log("Dữ liệu mật khẩu cập nhật lên Firebase Firestore:", updateData);
-
       const userDocRef = doc(db, "users", String(userData.id));
-      console.log("Đang gửi yêu cầu updateDoc mật khẩu lên Firebase Firestore...");
       await updateDoc(userDocRef, updateData);
-      console.log("updateDoc mật khẩu Firebase Firestore thành công.");
 
       const updatedUserData = { ...userData, password: newPassword };
-      console.log("Đang cập nhật userData trong AsyncStorage (mật khẩu):", updatedUserData);
       await AsyncStorage.setItem("userData", JSON.stringify(updatedUserData));
-      console.log("Cập nhật AsyncStorage (mật khẩu) thành công.");
 
       setUserData(updatedUserData);
       setShowPasswordModal(false);
@@ -199,223 +168,256 @@ const ProfileDetail = () => {
       setNewPassword("");
       setConfirmPassword("");
       Alert.alert("Thành công", "Mật khẩu đã được thay đổi");
-      console.log("Mật khẩu đã được thay đổi thành công.");
     } catch (error) {
       console.error("Lỗi cập nhật mật khẩu:", error);
-      console.error("Chi tiết lỗi:", error.message);
-
-      if (error.message.includes("permission-denied")) {
-        Alert.alert("Lỗi", "Không có quyền thay đổi mật khẩu. Vui lòng kiểm tra quyền Firebase Firestore.");
-        console.log("Lỗi: Quyền Firebase Firestore bị từ chối khi đổi mật khẩu.");
-      } else if (error.message.includes("not-found")) {
-        Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng trên Firebase Firestore. ID có thể sai.");
-        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase Firestore khi đổi mật khẩu.");
-      } else {
-        Alert.alert("Lỗi", `Không thể thay đổi mật khẩu. Vui lòng thử lại. Lỗi không xác định: ${error.message}`);
-        console.log("Lỗi: Lỗi không xác định khi đổi mật khẩu.");
-      }
+      Alert.alert("Lỗi", "Không thể thay đổi mật khẩu. Vui lòng thử lại.");
     } finally {
       setIsLoading(false);
-      console.log("isLoading set to false (handleChangePassword)");
-      console.log("--- Kết thúc xử lý Đổi mật khẩu ---");
     }
   };
 
   const refreshUserDataFromFirebase = async () => {
-    console.log("--- Bắt đầu làm mới dữ liệu người dùng từ Firebase ---"); 
     if (!userData.id || userData.id.trim() === "") {
       Alert.alert("Lỗi", "Không tìm thấy ID người dùng để làm mới.");
-      console.log("Lỗi: userData.id không hợp lệ (làm mới):", userData.id); 
       return;
     }
 
+    setIsLoading(true);
     try {
-      console.log("Đang truy vấn tài liệu người dùng từ Firebase với ID:", userData.id); 
       const userDocRef = doc(db, "users", userData.id.toString());
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
         const firebaseData = userDoc.data();
-        console.log("Dữ liệu người dùng từ Firebase:", firebaseData); 
         const updatedData = {
           id: userData.id,
           fullname: firebaseData.fullname || "",
           email: firebaseData.email || "",
           phone: firebaseData.phone || "",
           address: firebaseData.address || "",
-          password: firebaseData.password || "", 
+          password: firebaseData.password || "",
         };
 
         setUserData(updatedData);
-        console.log("Đang cập nhật userData trong AsyncStorage (làm mới):", updatedData); 
         await AsyncStorage.setItem("userData", JSON.stringify(updatedData));
-        console.log("Cập nhật AsyncStorage (làm mới) thành công."); 
         Alert.alert("Thành công", "Dữ liệu đã được làm mới từ Firebase");
-        console.log("Dữ liệu đã được làm mới thành công.");
       } else {
         Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng trên Firebase.");
-        console.log("Lỗi: Không tìm thấy tài liệu người dùng trên Firebase khi làm mới."); 
       }
     } catch (error) {
-      console.error("Lỗi khi làm mới dữ liệu người dùng:", error); 
-      Alert.alert("Lỗi", `Không thể làm mới dữ liệu. Chi tiết: ${error.message}`);
+      console.error("Lỗi khi làm mới dữ liệu người dùng:", error);
+      Alert.alert("Lỗi", "Không thể làm mới dữ liệu. Vui lòng thử lại.");
+    } finally {
+      setIsLoading(false);
     }
-    console.log("--- Kết thúc làm mới dữ liệu người dùng từ Firebase ---"); 
   };
 
+  const InfoField = ({ label, value, editable, onChangeText, placeholder, multiline, keyboardType }) => (
+    <View style={styles.infoField}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      {editable && editMode ? (
+        <TextInput
+          style={[styles.fieldInput, multiline && styles.multilineInput]}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor="#B0B0B0"
+          multiline={multiline}
+          keyboardType={keyboardType}
+        />
+      ) : (
+        <Text style={styles.fieldValue}>{value || "Chưa cập nhật"}</Text>
+      )}
+    </View>
+  );
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.refreshButton}
-          onPress={refreshUserDataFromFirebase}
-        >
-          <Ionicons name="refresh-outline" size={20} color="#8B4513" />
-        </TouchableOpacity>
-
-        {editMode ? (
-          <TouchableOpacity
-            style={[styles.saveButton, isLoading && styles.buttonDisabled]}
-            onPress={handleSave}
-            disabled={isLoading}
-          >
-            <Text style={styles.saveButtonText}>
-              {isLoading ? "Đang lưu..." : "Lưu"}
-            </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => {
-              setEditMode(true);
-              console.log("Chuyển sang chế độ chỉnh sửa.");
-            }}
-          >
-            <Text style={styles.editButtonText}>Sửa</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={styles.profileSection}>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Họ và tên</Text>
-          {editMode ? (
-            <TextInput
-              style={styles.input}
-              value={userData.fullname}
-              onChangeText={(text) => {
-                setUserData({ ...userData, fullname: text });
-                console.log("Họ và tên thay đổi:", text); 
-              }}
-              placeholder="Nhập họ và tên"
-            />
-          ) : (
-            <Text style={styles.infoText}>{userData.fullname}</Text>
-          )}
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Email</Text>
-          <Text style={styles.infoText}>{userData.email}</Text>
-          <Text style={styles.emailNote}>Email không thể thay đổi</Text>
-        </View>
-
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Số điện thoại</Text>
-          {editMode ? (
-            <TextInput
-              style={styles.input}
-              value={userData.phone}
-              onChangeText={(text) => {
-                setUserData({ ...userData, phone: text });
-                console.log("Số điện thoại thay đổi:", text);
-              }}
-              placeholder="Nhập số điện thoại"
-              keyboardType="phone-pad"
-            />
-          ) : (
-            <Text style={styles.infoText}>{userData.phone}</Text>
-          )}
-        </View>
-        <View style={styles.infoItem}>
-          <Text style={styles.infoLabel}>Địa chỉ giao hàng</Text>
-          {editMode ? (
-            <TextInput
-              style={styles.input}
-              value={userData.address}
-              onChangeText={(text) => setUserData({ ...userData, address: text })}
-              placeholder="Nhập địa chỉ của bạn"
-              multiline={true} // Cho phép nhập nhiều dòng nếu địa chỉ dài
-            />
-          ) : (
-            <Text style={styles.infoText}>{userData.address || "Chưa thiết lập địa chỉ"}</Text>
-          )}
-        </View>
-      
-      </View>
-
-      <TouchableOpacity
-        style={styles.changePasswordButton}
-        onPress={() => {
-          setShowPasswordModal(true);
-          console.log("Mở modal đổi mật khẩu."); 
-        }}
+    <View style={styles.container}>
+      {/* Header */}
+      <LinearGradient
+        colors={['#4b74ba', '#5a8ed6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
       >
-        <Text style={styles.changePasswordText}>Đổi mật khẩu</Text>
-      </TouchableOpacity>
+        <View style={styles.headerContent}>
+          
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={refreshUserDataFromFirebase}
+              disabled={isLoading}
+            >
+              <Ionicons name="refresh" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
 
+            {editMode ? (
+              <TouchableOpacity
+                style={styles.saveButton}
+                onPress={handleSave}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="checkmark" size={22} color="#FFFFFF" />
+                )}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => setEditMode(true)}
+              >
+                <Ionicons name="create-outline" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </LinearGradient>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <InfoField
+            label="Họ và tên"
+            value={userData.fullname}
+            editable={true}
+            onChangeText={(text) => setUserData({ ...userData, fullname: text })}
+            placeholder="Nhập họ và tên"
+          />
+
+          <View style={styles.divider} />
+
+          <View style={styles.infoField}>
+            <Text style={styles.fieldLabel}>Email</Text>
+            <Text style={styles.fieldValue}>{userData.email}</Text>
+            <Text style={styles.fieldNote}>
+              <Ionicons name="lock-closed" size={12} color="#95A5A6" /> Email không thể thay đổi
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <InfoField
+            label="Số điện thoại"
+            value={userData.phone}
+            editable={true}
+            onChangeText={(text) => setUserData({ ...userData, phone: text })}
+            placeholder="Nhập số điện thoại"
+            keyboardType="phone-pad"
+          />
+
+          <View style={styles.divider} />
+
+          <InfoField
+            label="Địa chỉ giao hàng"
+            value={userData.address}
+            editable={true}
+            onChangeText={(text) => setUserData({ ...userData, address: text })}
+            placeholder="Nhập địa chỉ của bạn"
+            multiline={true}
+          />
+        </View>
+
+        {/* Change Password Button */}
+        <TouchableOpacity
+          style={styles.changePasswordButton}
+          onPress={() => setShowPasswordModal(true)}
+        >
+          <View style={styles.changePasswordContent}>
+            <Ionicons name="key-outline" size={22} color="#4b74ba" />
+            <Text style={styles.changePasswordText}>Đổi mật khẩu</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#B0B0B0" />
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Password Modal */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={showPasswordModal}
-        onRequestClose={() => {
-          setShowPasswordModal(false);
-          console.log("Đóng modal đổi mật khẩu."); 
-        }}
+        onRequestClose={() => setShowPasswordModal(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Đổi mật khẩu</Text>
-              <TouchableOpacity onPress={() => {
-                setShowPasswordModal(false);
-                console.log("Đóng modal đổi mật khẩu từ nút X."); 
-              }}>
-                <Ionicons name="close" size={24} color="#333" />
+              <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+                <Ionicons name="close-circle" size={28} color="#4b74ba" />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={styles.passwordInputContainer}>
               <Text style={styles.inputLabel}>Mật khẩu hiện tại</Text>
-              <TextInput
-                style={styles.modalInput}
-                secureTextEntry={true}
-                value={currentPassword}
-                onChangeText={setCurrentPassword}
-                placeholder="Nhập mật khẩu hiện tại"
-              />
+              <View style={styles.passwordInputWrapper}>
+                <TextInput
+                  style={styles.passwordInput}
+                  secureTextEntry={!showCurrentPassword}
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  placeholder="Nhập mật khẩu hiện tại"
+                  placeholderTextColor="#B0B0B0"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
+                    size={22}
+                    color="#95A5A6"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={styles.passwordInputContainer}>
               <Text style={styles.inputLabel}>Mật khẩu mới</Text>
-              <TextInput
-                style={styles.modalInput}
-                secureTextEntry={true}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="Nhập mật khẩu mới"
-              />
+              <View style={styles.passwordInputWrapper}>
+                <TextInput
+                  style={styles.passwordInput}
+                  secureTextEntry={!showNewPassword}
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                  placeholderTextColor="#B0B0B0"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowNewPassword(!showNewPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showNewPassword ? "eye-off-outline" : "eye-outline"}
+                    size={22}
+                    color="#95A5A6"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <View style={styles.inputContainer}>
+            <View style={styles.passwordInputContainer}>
               <Text style={styles.inputLabel}>Xác nhận mật khẩu</Text>
-              <TextInput
-                style={styles.modalInput}
-                secureTextEntry={true}
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                placeholder="Nhập lại mật khẩu mới"
-              />
+              <View style={styles.passwordInputWrapper}>
+                <TextInput
+                  style={styles.passwordInput}
+                  secureTextEntry={!showConfirmPassword}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Nhập lại mật khẩu mới"
+                  placeholderTextColor="#B0B0B0"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                    size={22}
+                    color="#95A5A6"
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity
@@ -423,149 +425,223 @@ const ProfileDetail = () => {
               onPress={handleChangePassword}
               disabled={isLoading}
             >
-              <Text style={styles.confirmButtonText}>
-                {isLoading ? "Đang xử lý..." : "Xác nhận"}
-              </Text>
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Xác nhận</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F8F9FA",
   },
   header: {
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  editButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  saveButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  profileCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  infoField: {
+    paddingVertical: 12,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#7F8C8D",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  fieldValue: {
+    fontSize: 16,
+    color: "#2C3E50",
+    fontWeight: "500",
+  },
+  fieldInput: {
+    fontSize: 16,
+    color: "#2C3E50",
+    borderBottomWidth: 2,
+    borderBottomColor: "#4b74ba",
+    paddingVertical: 8,
+    paddingHorizontal: 0,
+  },
+  multilineInput: {
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  fieldNote: {
+    fontSize: 12,
+    color: "#95A5A6",
+    marginTop: 6,
+    fontStyle: "italic",
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#F0F0F0",
+    marginVertical: 8,
+  },
+  changePasswordButton: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 15,
     backgroundColor: "#FFFFFF",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  refreshButton: {
-    padding: 5,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333333",
-  },
-  editButton: {
-    padding: 5,
-  },
-  editButtonText: {
-    color: "#8B4513",
-    fontWeight: "bold",
-  },
-  saveButton: {
-    padding: 5,
-  },
-  saveButtonText: {
-    color: "#8B4513",
-    fontWeight: "bold",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  profileSection: {
-    marginTop: 15,
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginHorizontal: 15,
-  },
-  infoItem: {
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
-  },
-  infoLabel: {
-    fontSize: 14,
-    color: "#777777",
-    marginBottom: 5,
-  },
-  infoText: {
-    fontSize: 16,
-    color: "#333333",
-  },
-  emailNote: {
-    fontSize: 12,
-    color: "#999999",
-    fontStyle: "italic",
-    marginTop: 3,
-  },
-  input: {
-    fontSize: 16,
-    color: "#333333",
-    borderBottomWidth: 1,
-    borderBottomColor: "#8B4513",
-    paddingVertical: 5,
-  },
-  changePasswordButton: {
-    alignSelf: "center",
-    marginTop: 30,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: "#8B4513",
-    borderRadius: 5,
+  changePasswordContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   changePasswordText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2C3E50",
+    marginLeft: 12,
   },
   modalContainer: {
     flex: 1,
     justifyContent: "center",
     backgroundColor: "rgba(0,0,0,0.5)",
+    padding: 20,
   },
   modalContent: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 10,
-    padding: 20,
-    marginHorizontal: 20,
+    borderRadius: 24,
+    padding: 24,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#2C3E50",
   },
-  inputContainer: {
-    marginBottom: 15,
+  passwordInputContainer: {
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
-    color: "#777777",
-    marginBottom: 5,
+    fontWeight: "600",
+    color: "#7F8C8D",
+    marginBottom: 8,
   },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: "#CCCCCC",
-    borderRadius: 5,
-    padding: 10,
+  passwordInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#F8F9FA",
+  },
+  passwordInput: {
+    flex: 1,
     fontSize: 16,
+    color: "#2C3E50",
+    paddingVertical: 14,
+  },
+  eyeIcon: {
+    padding: 4,
   },
   confirmButton: {
-    backgroundColor: "#8B4513",
-    borderRadius: 5,
-    padding: 15,
+    backgroundColor: "#4b74ba",
+    borderRadius: 12,
+    padding: 16,
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 8,
+    shadowColor: "#4b74ba",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   confirmButtonText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 

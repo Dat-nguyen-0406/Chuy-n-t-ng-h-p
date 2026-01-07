@@ -5,14 +5,15 @@ import { Ionicons } from "@expo/vector-icons";
 
 // Screens
 import HomeScreen from "../screens/customer/HomeScreen";
-import DrinkListScreen from "../screens/customer/DrinkListScreen";
+
 import ChatbotScreen from "../screens/customer/ChatbotScreen"; // Import file vừa tạo
 import SearchScreen from "../screens/customer/SearchScreen";
 import CartScreen from "../screens/customer/CartScreen";
 import ProfileScreen from "../screens/customer/ProfileScreen";
 import OrderScreen from "../screens/customer/OrderScreen";
 import ProfileDetailScreen from "../screens/customer/ProfileDetailScreen";
-
+import GameScreen from "../screens/customer/GameScreen";
+import OrderTrackingScreen from "../screens/customer/OrderTrackingScreen";
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
 const SearchStack = createStackNavigator();
@@ -23,7 +24,7 @@ const HomeStackScreen = () => (
   <HomeStack.Navigator
    screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -35,11 +36,7 @@ const HomeStackScreen = () => (
       component={HomeScreen}
       options={{ title: "Trang chủ" }}
     />
-    <HomeStack.Screen
-      name="DrinkList"
-      component={DrinkListScreen}
-      options={{ title: "Danh sách đồ uống" }}
-    />
+    
     <HomeStack.Screen
       name="Order"
       component={OrderScreen}
@@ -52,7 +49,7 @@ const SearchStackScreen = () => (
   <SearchStack.Navigator
    screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -75,7 +72,7 @@ const SearchStackScreen = () => (
 const CartStackScreen = () => (
   <CartStack.Navigator screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -94,7 +91,7 @@ const ProfileStackScreen = () => (
   <ProfileStack.Navigator
    screenOptions={{
         headerStyle: {
-          backgroundColor: "#8B0000",
+          backgroundColor: "#0f367aff",
         },
         headerTintColor: "#fff",
         headerTitleStyle: {
@@ -120,7 +117,19 @@ const ProfileStackScreen = () => (
      name="Chatbot" 
      component={ChatbotScreen} 
      options={{ title: "Hỗ trợ trực tuyến" }} />
+     <ProfileStack.Screen
+      name="Game"
+      component={GameScreen}
+      options={{ title: "Săn Voucher" }}
+    />
+    <ProfileStack.Screen
+      name="Tracking"
+      component={OrderTrackingScreen}
+      options={{ title: "Định vị đơn hàng" }}
+    />
   </ProfileStack.Navigator>
+  
+
   
 );
 
@@ -143,7 +152,7 @@ const CustomerTabNavigator = () => {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: "#8B4513",
+        tabBarActiveTintColor: "#0f367aff",
         tabBarInactiveTintColor: "gray",
       })}
     >

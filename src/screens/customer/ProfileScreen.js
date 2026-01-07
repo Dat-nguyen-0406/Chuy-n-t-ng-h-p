@@ -10,11 +10,15 @@ import {
   ScrollView,
   Alert,
   Modal,
+  Dimensions,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
-import { useNavigation, useIsFocused } from "@react-navigation/native"; 
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 const ProfileScreen = () => {
   const { logout } = useAuth();
@@ -22,8 +26,7 @@ const ProfileScreen = () => {
   const [showBadge, setShowBadge] = useState(true);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); 
-
+  const isFocused = useIsFocused();
 
   const fetchUserData = async () => {
     try {
@@ -33,20 +36,19 @@ const ProfileScreen = () => {
         console.log("ProfileScreen: userData from AsyncStorage:", parsed);
         setUserData(parsed);
       } else {
-        setUserData({}); 
+        setUserData({});
       }
     } catch (error) {
       console.log("ProfileScreen: Lỗi khi lấy thông tin người dùng:", error);
-      setUserData({}); 
+      setUserData({});
     }
   };
-
 
   useEffect(() => {
     if (isFocused) {
       console.log("ProfileScreen: Màn hình đang được focus, gọi fetchUserData.");
       fetchUserData();
-    
+
       setTimeout(() => {
         setShowBadge(false);
       }, 5000);
@@ -54,21 +56,33 @@ const ProfileScreen = () => {
   }, [isFocused]);
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      await AsyncStorage.clear();
-    } catch (error) {
-      Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại sau.");
-    }
+    Alert.alert(
+      "Đăng xuất",
+      "Bạn có chắc chắn muốn đăng xuất?",
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logout();
+              await AsyncStorage.clear();
+            } catch (error) {
+              Alert.alert("Lỗi", "Không thể đăng xuất. Vui lòng thử lại sau.");
+            }
+          },
+        },
+      ]
+    );
   };
-
 
   const navigateProfileDetail = () => {
     navigation.navigate("ProfileDetail", { id: "1" });
   };
+  
   const navigateToOrderHistory = () => {
-    navigation.navigate("Cart"
-     );
+    navigation.navigate("Cart");
   };
 
   const navigateToNotifications = () => {
@@ -80,140 +94,173 @@ const ProfileScreen = () => {
     navigation.navigate("OrderTracking");
   };
 
-  const navigateToReviews = () => {
-    navigation.navigate("Reviews");
+  const navigateToGames = () => {
+    navigation.navigate("Game");
   };
+  const navigateToTracking = () => {
+    navigation.navigate("Tracking");
+  };
+  
+  
   const navigateToChatbot = () => {
-  navigation.navigate("Chatbot");
+    navigation.navigate("Chatbot");
   };
+  
   const showPromotion = () => {
     setShowPromoModal(true);
   };
-  
-  
+
+  const MenuItem = ({ icon, title, onPress, badge, iconColor = "#4b74ba" }) => (
+    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+      <View style={styles.menuIconContainer}>
+        <View style={[styles.iconWrapper, { backgroundColor: iconColor + '15' }]}>
+          <Ionicons name={icon} size={22} color={iconColor} />
+        </View>
+        {badge && <View style={styles.badge} />}
+      </View>
+      <Text style={styles.menuItemText}>{title}</Text>
+      <Ionicons name="chevron-forward" size={20} color="#B0B0B0" />
+    </TouchableOpacity>
+  );
 
   return (
-    <ScrollView style={styles.container}>
-  
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header với gradient */}
+      <LinearGradient
+        colors={['#4b74ba', '#5a8ed6']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
+        <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
               source={require("../../assets/images/default-avatar.png")}
               style={styles.profileImage}
               defaultSource={require("../../assets/images/default-avatar.png")}
             />
+            <TouchableOpacity style={styles.editAvatarButton}>
+              <Ionicons name="camera" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.editAvatarButton}>
-            <Ionicons name="camera-outline" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          
+          <View style={styles.userInfoContainer}>
+            <Text style={styles.fullname}>{userData.fullname || "Người dùng"}</Text>
+            <View style={styles.infoRow}>
+              <Ionicons name="mail-outline" size={14} color="#E8F0FF" />
+              <Text style={styles.userInfo}>{userData.email || "email@example.com"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Ionicons name="call-outline" size={14} color="#E8F0FF" />
+              <Text style={styles.userInfo}>{userData.phone || "Chưa cập nhật"}</Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.fullname}>{userData.fullname}</Text>
-        <Text style={styles.email}>Email : {userData.email}</Text>
-        <Text style={styles.phone}>SĐT : {userData.phone}</Text>
 
+        {/* Loyalty Card */}
         <TouchableOpacity style={styles.loyaltyCard} onPress={showPromotion}>
-          <View style={styles.loyaltyCardContent}>
-            <Ionicons name="cafe-outline" size={24} color="#FFFFFF" />
+          <View style={styles.loyaltyCardLeft}>
+            <View style={styles.pointsBadge}>
+              <Ionicons name="star" size={20} color="#FFD700" />
+            </View>
             <View style={styles.loyaltyTextContainer}>
               <Text style={styles.loyaltyTitle}>Thẻ Thành Viên</Text>
               <Text style={styles.loyaltyPoints}>150 điểm</Text>
             </View>
           </View>
-          <Text style={styles.loyaltyPromo}>Xem ưu đãi</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Phần menu tài khoản */}
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Tài khoản</Text>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={navigateProfileDetail}
-        >
-          <Ionicons name="person-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Thông tin cá nhân</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={navigateToOrderHistory}
-        >
-          <Ionicons name="time-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Lịch sử đơn hàng</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={navigateToOrderTracking}
-        >
-          <Ionicons name="location-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Theo dõi đơn hàng hiện tại</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem} onPress={navigateToReviews}>
-          <Ionicons name="star-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Đánh giá & Nhận xét</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={navigateToNotifications}
-        >
-          <View style={styles.iconWithBadge}>
-            <Ionicons name="notifications-outline" size={24} color="#8B4513" />
-            {showBadge && <View style={styles.badge} />}
-          </View>
-          <Text style={styles.menuItemText}>Thông báo</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Phần menu cài đặt */}
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Cài đặt</Text>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="settings-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Cài đặt ứng dụng</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons name="language-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Ngôn ngữ</Text>
-          <View style={styles.valueContainer}>
-            <Text style={styles.valueText}>Tiếng Việt</Text>
-            <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
+          <View style={styles.loyaltyCardRight}>
+            <Text style={styles.loyaltyPromo}>Xem ưu đãi</Text>
+            <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
           </View>
         </TouchableOpacity>
+      </LinearGradient>
 
-        <TouchableOpacity style={styles.menuItem} onPress={navigateToChatbot}>
-          <Ionicons name="help-outline" size={24} color="#8B4513" />
-          <Text style={styles.menuItemText}>Trợ giúp & Hỗ trợ</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
-        </TouchableOpacity>
+      {/* Menu Sections */}
+      <View style={styles.contentContainer}>
+        {/* Tài khoản Section */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Tài khoản của tôi</Text>
+          <View style={styles.menuCard}>
+            <MenuItem
+              icon="person-outline"
+              title="Thông tin cá nhân"
+              onPress={navigateProfileDetail}
+            />
+            <MenuItem
+              icon="receipt-outline"
+              title="Lịch sử đơn hàng"
+              onPress={navigateToOrderHistory}
+            />
+            <MenuItem
+              icon="location-outline"
+              title="Theo dõi đơn hàng"
+              onPress={navigateToTracking}
+            />
+          </View>
+        </View>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Ionicons
-            name="information-outline"
-            size={24}
-            color="#8B4513"
-          />
-          <Text style={styles.menuItemText}>Về chúng tôi</Text>
-          <Ionicons name="chevron-forward" size={24} color="#CCCCCC" />
+        {/* Tiện ích Section */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Tiện ích</Text>
+          <View style={styles.menuCard}>
+            <MenuItem
+              icon="gift-outline"
+              title="Săn Voucher ngay"
+              onPress={navigateToGames}
+              iconColor="#FF6B6B"
+            />
+            
+            <MenuItem
+              icon="notifications-outline"
+              title="Thông báo"
+              onPress={navigateToNotifications}
+              badge={showBadge}
+              iconColor="#4ECDC4"
+            />
+            <MenuItem
+              icon="chatbubble-ellipses-outline"
+              title="Trợ giúp & Hỗ trợ"
+              onPress={navigateToChatbot}
+              iconColor="#95E1D3"
+            />
+          </View>
+        </View>
+
+        {/* Cài đặt Section */}
+        <View style={styles.menuSection}>
+          <Text style={styles.sectionTitle}>Cài đặt</Text>
+          <View style={styles.menuCard}>
+            <TouchableOpacity style={styles.menuItem}>
+              <View style={styles.menuIconContainer}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#FFA50015' }]}>
+                  <Ionicons name="settings-outline" size={22} color="#FFA500" />
+                </View>
+              </View>
+              <Text style={styles.menuItemText}>Cài đặt ứng dụng</Text>
+              <Ionicons name="chevron-forward" size={20} color="#B0B0B0" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem}>
+              <View style={styles.menuIconContainer}>
+                <View style={[styles.iconWrapper, { backgroundColor: '#9B59B615' }]}>
+                  <Ionicons name="language-outline" size={22} color="#9B59B6" />
+                </View>
+              </View>
+              <Text style={styles.menuItemText}>Ngôn ngữ</Text>
+              <View style={styles.languageContainer}>
+                <Text style={styles.languageText}>Tiếng Việt</Text>
+                <Ionicons name="chevron-forward" size={20} color="#B0B0B0" />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Nút đăng xuất */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color="#FF4757" />
+          <Text style={styles.logoutText}>Đăng xuất</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Nút đăng xuất */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Đăng xuất</Text>
-      </TouchableOpacity>
 
       {/* Modal hiển thị ưu đãi */}
       <Modal
@@ -227,13 +274,13 @@ const ProfileScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Ưu đãi thành viên</Text>
               <TouchableOpacity onPress={() => setShowPromoModal(false)}>
-                <Ionicons name="close" size={24} color="#333" />
+                <Ionicons name="close-circle" size={28} color="#4b74ba" />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.promoList}>
+            <ScrollView style={styles.promoList} showsVerticalScrollIndicator={false}>
               <View style={styles.promoItem}>
-                <View style={styles.promoBadge}>
+                <View style={[styles.promoBadge, { backgroundColor: '#FF6B6B' }]}>
                   <Text style={styles.promoBadgeText}>-30%</Text>
                 </View>
                 <View style={styles.promoInfo}>
@@ -241,12 +288,15 @@ const ProfileScreen = () => {
                   <Text style={styles.promoDesc}>
                     Áp dụng cho đơn hàng từ 100.000đ
                   </Text>
-                  <Text style={styles.promoExpiry}>Hết hạn: 30/04/2025</Text>
+                  <View style={styles.promoFooter}>
+                    <Ionicons name="time-outline" size={14} color="#999" />
+                    <Text style={styles.promoExpiry}>Hết hạn: 30/04/2025</Text>
+                  </View>
                 </View>
               </View>
 
               <View style={styles.promoItem}>
-                <View style={styles.promoBadge}>
+                <View style={[styles.promoBadge, { backgroundColor: '#4ECDC4' }]}>
                   <Text style={styles.promoBadgeText}>FREE</Text>
                 </View>
                 <View style={styles.promoInfo}>
@@ -254,24 +304,26 @@ const ProfileScreen = () => {
                   <Text style={styles.promoDesc}>
                     Đổi 100 điểm lấy 1 topping miễn phí
                   </Text>
-                  <Text style={styles.promoExpiry}>
-                    Không giới hạn thời gian
-                  </Text>
+                  <View style={styles.promoFooter}>
+                    <Ionicons name="infinite-outline" size={14} color="#999" />
+                    <Text style={styles.promoExpiry}>Không giới hạn thời gian</Text>
+                  </View>
                 </View>
               </View>
 
               <View style={styles.promoItem}>
-                <View
-                  style={[styles.promoBadge, { backgroundColor: "#FFD700" }]}
-                >
-                  <Text style={styles.promoBadgeText}>BOGO</Text>
+                <View style={[styles.promoBadge, { backgroundColor: '#FFD700' }]}>
+                  <Text style={[styles.promoBadgeText, { color: '#333' }]}>BOGO</Text>
                 </View>
                 <View style={styles.promoInfo}>
                   <Text style={styles.promoTitle}>Mua 1 tặng 1</Text>
                   <Text style={styles.promoDesc}>
                     Áp dụng vào thứ 2 hàng tuần
                   </Text>
-                  <Text style={styles.promoExpiry}>Hết hạn: 31/05/2025</Text>
+                  <View style={styles.promoFooter}>
+                    <Ionicons name="time-outline" size={14} color="#999" />
+                    <Text style={styles.promoExpiry}>Hết hạn: 31/05/2025</Text>
+                  </View>
                 </View>
               </View>
             </ScrollView>
@@ -292,176 +344,199 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#F8F9FA",
   },
   header: {
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: 25,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
-  headerTop: {
+  profileSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  profileImageContainer: {
     position: "relative",
   },
-  fullname: {
-  fontSize: 20,
-  fontWeight: "600",
-  color: "#4A4A4A",
-  marginTop: 10,
-},
-
-email: {
-  fontSize: 16,
-  fontWeight: "400",
-  color: "#777",
-  marginTop: 5,
-},
-
-phone: {
-  fontSize: 16,
-  fontWeight: "400",
-  color: "#777",
-  marginTop: 5,
-},
-
-  profileImageContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: "hidden",
-    marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "#8B4513",
-  },
   profileImage: {
-    width: "100%",
-    height: "100%",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
   },
   editAvatarButton: {
     position: "absolute",
-    bottom: 10,
+    bottom: 0,
     right: 0,
-    backgroundColor: "#8B4513",
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    backgroundColor: "#4b74ba",
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  userInfoContainer: {
+    flex: 1,
+    marginLeft: 15,
+  },
+  fullname: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: 6,
+  },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  userInfo: {
+    fontSize: 14,
+    color: "#E8F0FF",
+    marginLeft: 6,
+  },
+  loyaltyCard: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
+  },
+  loyaltyCardLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  pointsBadge: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
     justifyContent: "center",
     alignItems: "center",
   },
-  userName: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 5,
-  },
-  userEmail: {
-    fontSize: 16,
-    color: "#777777",
-    marginBottom: 5,
-  },
-  userPhone: {
-    fontSize: 16,
-    color: "#777777",
-    marginBottom: 15,
-  },
-  loyaltyCard: {
-    width: "100%",
-    backgroundColor: "#8B4513",
-    borderRadius: 12,
-    padding: 15,
-    marginTop: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  loyaltyCardContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
   loyaltyTextContainer: {
-    marginLeft: 10,
+    marginLeft: 12,
   },
   loyaltyTitle: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: 14,
+    fontWeight: "600",
+    opacity: 0.9,
   },
   loyaltyPoints: {
     color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  loyaltyCardRight: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   loyaltyPromo: {
-    color: "#FFD700",
+    color: "#FFFFFF",
     fontSize: 14,
-    fontWeight: "bold",
-    textAlign: "right",
+    fontWeight: "600",
+    marginRight: 4,
+  },
+  contentContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
   menuSection: {
-    backgroundColor: "#FFFFFF",
-    marginTop: 15,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderRadius: 10,
-    marginHorizontal: 15,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
-    color: "#333333",
+    fontWeight: "700",
+    color: "#2C3E50",
+    marginBottom: 12,
+  },
+  menuCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 15,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#EEEEEE",
+    borderBottomColor: "#F0F0F0",
+  },
+  menuIconContainer: {
+    position: "relative",
+    marginRight: 12,
+  },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
   menuItemText: {
     flex: 1,
-    marginLeft: 15,
-    fontSize: 16,
-    color: "#333333",
-  },
-  iconWithBadge: {
-    position: "relative",
+    fontSize: 15,
+    color: "#2C3E50",
+    fontWeight: "500",
   },
   badge: {
     position: "absolute",
     right: -2,
     top: -2,
-    backgroundColor: "red",
-    borderRadius: 9,
-    width: 9,
-    height: 9,
+    backgroundColor: "#FF4757",
+    borderRadius: 6,
+    width: 12,
+    height: 12,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
-  valueContainer: {
+  languageContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
-  valueText: {
+  languageText: {
     fontSize: 14,
-    color: "#777777",
-    marginRight: 5,
+    color: "#95A5A6",
+    marginRight: 4,
   },
   logoutButton: {
-    backgroundColor: "#8B0000",
-    marginHorizontal: 15,
-    marginVertical: 25,
-    padding: 15,
-    borderRadius: 10,
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    marginTop: 10,
+    padding: 16,
+    borderRadius: 16,
     alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: "#FFE5E5",
+    shadowColor: "#FF4757",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   logoutText: {
-    color: "#FFFFFF",
+    color: "#FF4757",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    marginLeft: 8,
   },
-
   modalContainer: {
     flex: 1,
     justifyContent: "flex-end",
@@ -469,10 +544,10 @@ phone: {
   },
   modalContent: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: "80%",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 24,
+    maxHeight: "85%",
   },
   modalHeader: {
     flexDirection: "row",
@@ -481,63 +556,75 @@ phone: {
     marginBottom: 20,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#2C3E50",
   },
   promoList: {
-    maxHeight: 300,
+    maxHeight: 400,
   },
   promoItem: {
     flexDirection: "row",
-    backgroundColor: "#F9F9F9",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
+    backgroundColor: "#F8F9FA",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#EEEEEE",
+    borderColor: "#E8E8E8",
     alignItems: "center",
   },
   promoBadge: {
-    backgroundColor: "#8B4513",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: 14,
   },
   promoBadgeText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontWeight: "700",
     fontSize: 14,
   },
   promoInfo: {
     flex: 1,
   },
   promoTitle: {
-    fontWeight: "bold",
+    fontWeight: "700",
     fontSize: 16,
-    marginBottom: 5,
+    color: "#2C3E50",
+    marginBottom: 4,
   },
   promoDesc: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 5,
+    fontSize: 13,
+    color: "#7F8C8D",
+    marginBottom: 6,
+  },
+  promoFooter: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   promoExpiry: {
     fontSize: 12,
-    color: "#999999",
+    color: "#95A5A6",
+    marginLeft: 4,
   },
   usePointsButton: {
-    backgroundColor: "#8B4513",
-    borderRadius: 10,
-    padding: 15,
+    backgroundColor: "#4b74ba",
+    borderRadius: 16,
+    padding: 16,
     alignItems: "center",
-    marginTop: 15,
+    marginTop: 16,
+    shadowColor: "#4b74ba",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   usePointsText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });
 

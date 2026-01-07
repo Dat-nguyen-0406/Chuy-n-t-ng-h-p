@@ -24,7 +24,6 @@ const SearchScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
 
-  // Load dữ liệu sản phẩm và lịch sử tìm kiếm khi màn hình được tải
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -37,7 +36,6 @@ const SearchScreen = () => {
         }));
         setProducts(productsData);
 
-      
         const history = await AsyncStorage.getItem("searchHistory");
         if (history) {
           setSearchHistory(JSON.parse(history));
@@ -52,7 +50,6 @@ const SearchScreen = () => {
     loadData();
   }, []);
 
- 
   useEffect(() => {
     const saveSearchHistory = async () => {
       try {
@@ -69,42 +66,35 @@ const SearchScreen = () => {
     }
   }, [searchHistory, isLoading]);
 
-
-  // Xử lý tìm kiếm chính
   const handleSearch = () => {
     if (!searchText.trim()) {
-      setFilteredProducts([]); 
+      setFilteredProducts([]);
       setSuggestions([]);
       return;
     }
 
-    // Thêm vào lịch sử tìm kiếm (không trùng lặp)
     const newHistory = [
       searchText.trim(),
       ...searchHistory.filter((item) => item.toLowerCase() !== searchText.trim().toLowerCase()),
-    ].slice(0, 5); //
+    ].slice(0, 5);
     setSearchHistory(newHistory);
 
-    // Lọc sản phẩm
     const filtered = products.filter((product) =>
       product.drinkname.toLowerCase().includes(searchText.trim().toLowerCase())
     );
     setFilteredProducts(filtered);
-    setSuggestions([]); 
+    setSuggestions([]);
   };
 
-  // Xử lý khi nhấn vào một mục trong lịch sử
   const handleHistoryItemPress = (item) => {
     setSearchText(item);
-   
     const filtered = products.filter((product) =>
       product.drinkname.toLowerCase().includes(item.toLowerCase())
     );
     setFilteredProducts(filtered);
-    setSuggestions([]); 
+    setSuggestions([]);
   };
 
-  // Xử lý khi thay đổi text input (đề xuất)
   const handleTextChange = (text) => {
     setSearchText(text);
     if (text.length > 0) {
@@ -112,128 +102,153 @@ const SearchScreen = () => {
         product.drinkname.toLowerCase().includes(text.toLowerCase())
       );
       setSuggestions(suggested);
-      setFilteredProducts([]); 
+      setFilteredProducts([]);
     } else {
       setSuggestions([]);
       setFilteredProducts([]);
     }
   };
 
-  // Xóa một mục khỏi lịch sử
   const removeHistoryItem = (itemToRemove) => {
     const newHistory = searchHistory.filter((item) => item !== itemToRemove);
     setSearchHistory(newHistory);
   };
 
-  // Xóa toàn bộ lịch sử
   const clearSearchHistory = () => {
     setSearchHistory([]);
   };
 
-  // Render mỗi item sản phẩm
   const renderProductItem = ({ item }) => (
     <TouchableOpacity
       style={styles.productItem}
       onPress={() => navigation.navigate("Order", { drinkId: item.id })}
+      activeOpacity={0.8}
     >
-      <Image source={{ uri: item.image }} style={styles.productImage} />
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.drinkname}</Text>
-        <Text style={styles.productPrice}>{item.price}đ</Text>
+      <View style={styles.productCard}>
+        <View style={styles.productImageWrapper}>
+          <Image source={{ uri: item.image }} style={styles.productImage} />
+        </View>
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={2}>{item.drinkname}</Text>
+          <Text style={styles.productPrice}>{item.price}đ</Text>
+        </View>
+        <FontAwesome name="chevron-right" size={16} color="#CCC" />
       </View>
     </TouchableOpacity>
   );
 
-  // Render mỗi item lịch sử tìm kiếm
   const renderHistoryItem = ({ item }) => (
     <View style={styles.historyItem}>
       <TouchableOpacity
         style={styles.historyTextContainer}
         onPress={() => handleHistoryItemPress(item)}
+        activeOpacity={0.7}
       >
-        <FontAwesome name="history" size={16} color="#888" />
+        <View style={styles.historyIconCircle}>
+          <FontAwesome name="history" size={14} color="#0f367aff" />
+        </View>
         <Text style={styles.historyText}>{item}</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => removeHistoryItem(item)}>
-        <FontAwesome name="times" size={16} color="#888" />
+      <TouchableOpacity 
+        onPress={() => removeHistoryItem(item)}
+        style={styles.deleteButton}
+        activeOpacity={0.7}
+      >
+        <FontAwesome name="times" size={16} color="#999" />
       </TouchableOpacity>
     </View>
   );
 
-  // Render mỗi item đề xuất
   const renderSuggestionItem = ({ item }) => (
     <TouchableOpacity
       style={styles.suggestionItem}
       onPress={() => {
         setSearchText(item.drinkname);
-        setFilteredProducts([item]); 
-        setSuggestions([]); 
+        setFilteredProducts([item]);
+        setSuggestions([]);
       }}
+      activeOpacity={0.7}
     >
-      <FontAwesome name="search" size={16} color="#888" />
+      <View style={styles.suggestionIconCircle}>
+        <FontAwesome name="search" size={14} color="#0f367aff" />
+      </View>
       <Text style={styles.suggestionText}>{item.drinkname}</Text>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-  
-      <View style={styles.searchBar}>
-        <FontAwesome
-          name="search"
-          size={20}
-          color="#888"
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Tìm kiếm đồ uống..."
-          value={searchText}
-          onChangeText={handleTextChange}
-          onSubmitEditing={handleSearch}
-          returnKeyType="search"
-        />
-        {searchText.length > 0 && (
-          <TouchableOpacity onPress={() => handleTextChange("")}>
-            <FontAwesome name="times" size={20} color="#888" />
-          </TouchableOpacity>
-        )}
+      <View style={styles.searchBarContainer}>
+        <View style={styles.searchBar}>
+          <FontAwesome
+            name="search"
+            size={18}
+            color="#999"
+            style={styles.searchIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tìm kiếm đồ uống..."
+            placeholderTextColor="#999"
+            value={searchText}
+            onChangeText={handleTextChange}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          {searchText.length > 0 && (
+            <TouchableOpacity 
+              onPress={() => handleTextChange("")}
+              style={styles.clearButton}
+              activeOpacity={0.7}
+            >
+              <FontAwesome name="times-circle" size={18} color="#999" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {isLoading ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#8B0000" />
-          <Text>Đang tải dữ liệu...</Text>
+          <ActivityIndicator size="large" color="#0f367aff" />
+          <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
         </View>
       ) : (
         <>
-          {/* Hiển thị đề xuất khi có searchText và chưa có kết quả tìm kiếm */}
           {searchText.length > 0 && suggestions.length > 0 && filteredProducts.length === 0 && (
             <View style={styles.suggestionsContainer}>
+              <Text style={styles.suggestionsTitle}>Gợi ý tìm kiếm</Text>
               <FlatList
                 data={suggestions}
                 renderItem={renderSuggestionItem}
                 keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
               />
             </View>
           )}
 
-      
           {filteredProducts.length > 0 ? (
-            <FlatList
-              data={filteredProducts}
-              renderItem={renderProductItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.productList}
-            />
+            <View style={styles.resultsContainer}>
+              <Text style={styles.resultsTitle}>
+                Tìm thấy {filteredProducts.length} kết quả
+              </Text>
+              <FlatList
+                data={filteredProducts}
+                renderItem={renderProductItem}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.productList}
+                showsVerticalScrollIndicator={false}
+              />
+            </View>
           ) : (
-    
             <View style={styles.historyContainer}>
               {searchText.length === 0 && searchHistory.length > 0 && (
                 <>
                   <View style={styles.historyHeader}>
                     <Text style={styles.sectionTitle}>Lịch sử tìm kiếm</Text>
-                    <TouchableOpacity onPress={clearSearchHistory}>
+                    <TouchableOpacity 
+                      onPress={clearSearchHistory}
+                      activeOpacity={0.7}
+                    >
                       <Text style={styles.clearHistoryText}>Xóa tất cả</Text>
                     </TouchableOpacity>
                   </View>
@@ -241,32 +256,38 @@ const SearchScreen = () => {
                     data={searchHistory}
                     renderItem={renderHistoryItem}
                     keyExtractor={(item, index) => index.toString()}
+                    showsVerticalScrollIndicator={false}
                   />
                 </>
               )}
 
-              {/* Đề xuất sản phẩm phổ biến khi không có lịch sử và searchText trống */}
               {searchText.length === 0 && searchHistory.length === 0 && products.length > 0 && (
                 <>
                   <Text style={styles.sectionTitle}>Đề xuất cho bạn</Text>
                   <FlatList
-                    data={products.slice(0, 5)} 
+                    data={products.slice(0, 5)}
                     renderItem={renderProductItem}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.productList}
+                    showsVerticalScrollIndicator={false}
                   />
                 </>
               )}
 
-              {/* Thông báo khi không tìm thấy gì và không có lịch sử/đề xuất chung */}
               {searchText.length > 0 && filteredProducts.length === 0 && suggestions.length === 0 && (
                 <View style={styles.noResultsContainer}>
-                  <Text style={styles.noResultsText}>Không tìm thấy kết quả phù hợp.</Text>
+                  <FontAwesome name="search" size={64} color="#E0E0E0" />
+                  <Text style={styles.noResultsText}>Không tìm thấy kết quả</Text>
+                  <Text style={styles.noResultsSubtext}>
+                    Thử tìm kiếm với từ khóa khác
+                  </Text>
                 </View>
               )}
-               {searchText.length === 0 && searchHistory.length === 0 && products.length === 0 && !isLoading && (
+
+              {searchText.length === 0 && searchHistory.length === 0 && products.length === 0 && !isLoading && (
                 <View style={styles.noResultsContainer}>
-                  <Text style={styles.noResultsText}>Không có dữ liệu sản phẩm để hiển thị đề xuất.</Text>
+                  <FontAwesome name="coffee" size={64} color="#E0E0E0" />
+                  <Text style={styles.noResultsText}>Chưa có sản phẩm</Text>
                 </View>
               )}
             </View>
@@ -280,127 +301,226 @@ const SearchScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 16,
+    backgroundColor: "#F8F9FA",
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  searchBarContainer: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    marginBottom: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  clearButton: {
+    padding: 4,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 15,
+    color: "#666",
+    fontWeight: "500",
   },
   suggestionsContainer: {
     backgroundColor: "#fff",
-    borderRadius: 8,
-    marginBottom: 16,
-    elevation: 2,
+    marginHorizontal: 20,
+    marginTop: 16,
+    borderRadius: 12,
+    paddingVertical: 12,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  suggestionsTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   suggestionItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  suggestionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E8F0FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
   },
   suggestionText: {
-    marginLeft: 10,
-    fontSize: 16,
+    flex: 1,
+    fontSize: 15,
     color: "#333",
+    fontWeight: "500",
   },
   historyContainer: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
   historyHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    letterSpacing: 0.3,
   },
   clearHistoryText: {
-    color: "#6F4E37",
-    fontSize: 14,
+    color: "#0f367aff",
+    fontSize: 15,
+    fontWeight: "600",
   },
   historyItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    paddingVertical: 14,
+    backgroundColor: "#fff",
+    marginBottom: 8,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   historyTextContainer: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
   },
+  historyIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#E8F0FF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
   historyText: {
-    marginLeft: 10,
-    fontSize: 16,
+    flex: 1,
+    fontSize: 15,
     color: "#333",
+    fontWeight: "500",
+  },
+  deleteButton: {
+    padding: 8,
+  },
+  resultsContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  resultsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666",
+    marginBottom: 16,
   },
   productList: {
     paddingBottom: 20,
   },
   productItem: {
+    marginBottom: 12,
+  },
+  productCard: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  productImageWrapper: {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "#F5F5F5",
   },
   productImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
+    width: "100%",
+    height: "100%",
   },
   productInfo: {
     flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
   },
   productName: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 4,
-    color: "#333",
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 6,
+    color: "#1a1a1a",
+    lineHeight: 20,
   },
   productPrice: {
-    fontSize: 14,
-    color: "#6F4E37",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0f367aff",
   },
   noResultsContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 60,
   },
   noResultsText: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center',
+    fontSize: 18,
+    color: "#666",
+    fontWeight: "600",
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  noResultsSubtext: {
+    fontSize: 14,
+    color: "#999",
   },
 });
 
