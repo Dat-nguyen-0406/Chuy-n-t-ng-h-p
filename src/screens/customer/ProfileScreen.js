@@ -226,34 +226,6 @@ const ProfileScreen = () => {
           </View>
         </View>
 
-        {/* Cài đặt Section */}
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Cài đặt</Text>
-          <View style={styles.menuCard}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <View style={[styles.iconWrapper, { backgroundColor: '#FFA50015' }]}>
-                  <Ionicons name="settings-outline" size={22} color="#FFA500" />
-                </View>
-              </View>
-              <Text style={styles.menuItemText}>Cài đặt ứng dụng</Text>
-              <Ionicons name="chevron-forward" size={20} color="#B0B0B0" />
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIconContainer}>
-                <View style={[styles.iconWrapper, { backgroundColor: '#9B59B615' }]}>
-                  <Ionicons name="language-outline" size={22} color="#9B59B6" />
-                </View>
-              </View>
-              <Text style={styles.menuItemText}>Ngôn ngữ</Text>
-              <View style={styles.languageContainer}>
-                <Text style={styles.languageText}>Tiếng Việt</Text>
-                <Ionicons name="chevron-forward" size={20} color="#B0B0B0" />
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* Nút đăng xuất */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
