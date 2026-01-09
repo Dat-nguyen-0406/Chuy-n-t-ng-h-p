@@ -19,6 +19,7 @@ const HomeStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 const CartStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
+const OrderStack = createStackNavigator();
 
 const HomeStackScreen = () => (
   <HomeStack.Navigator
@@ -41,6 +42,11 @@ const HomeStackScreen = () => (
       name="Order"
       component={OrderScreen}
       options={{ title: "Order" }}
+    ></HomeStack.Screen>
+    <HomeStack.Screen
+      name="Tracking"  
+      component={OrderTrackingScreen}
+      options={{ title: "Theo dõi đơn hàng" }}
     ></HomeStack.Screen>
   </HomeStack.Navigator>
 );
@@ -84,7 +90,29 @@ const CartStackScreen = () => (
       component={CartScreen}
       options={{ title: "Đơn Hàng" }}
     />
+    <CartStack.Screen
+      name="Tracking"  
+      component={OrderTrackingScreen}
+      options={{ title: "Theo dõi đơn hàng" }}
+    />
   </CartStack.Navigator>
+);
+const OrderStackScreen = () => (
+  <OrderStack.Navigator screenOptions={{
+        headerStyle: {
+          backgroundColor: "#0f367aff",
+        },
+        headerTintColor: "#fff",
+        headerTitleStyle: {
+          fontWeight: "bold",
+        },
+      }}>
+    <OrderStack.Screen
+      name="Tracking"  
+      component={OrderTrackingScreen}
+      options={{ title: "Theo dõi đơn hàng" }}
+    />
+  </OrderStack.Navigator>
 );
 
 const ProfileStackScreen = () => (

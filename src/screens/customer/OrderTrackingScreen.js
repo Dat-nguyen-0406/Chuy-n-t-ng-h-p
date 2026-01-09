@@ -6,363 +6,445 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   Alert,
   ActivityIndicator,
   Dimensions,
+  Linking,
+  Platform,
 } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import * as Location from 'expo-location';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Circle } from 'react-native-maps';
+import { getFirestore, doc, onSnapshot } from "firebase/firestore";
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
+import app from "../../sever/firebase";
 
 const { width, height } = Dimensions.get('window');
+const db = getFirestore(app);
 
-const OrderTrackingScreen = ({ navigation }) => {
-  const [location, setLocation] = useState(null);
+const OrderTrackingScreen = ({ route, navigation }) => {
+  const { orderId } = route.params || {};
   const [loading, setLoading] = useState(true);
-  const [orderStatus, setOrderStatus] = useState('preparing'); // preparing, delivering, delivered
+  const [orderData, setOrderData] = useState(null);
+  const [driverLocation, setDriverLocation] = useState(null);
+  const [estimatedTime, setEstimatedTime] = useState(null);
+  const [distance, setDistance] = useState(null);
   const mapRef = useRef(null);
 
-  // Tọa độ mẫu cho demo
+  // Vị trí mặc định của nhà hàng (DrinkShop)
   const restaurantLocation = {
     latitude: 21.028511,
     longitude: 105.804817,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
   };
-
-  const [deliveryLocation, setDeliveryLocation] = useState(null);
-  const [driverLocation, setDriverLocation] = useState({
-    latitude: 21.025,
-    longitude: 105.810,
-  });
 
   useEffect(() => {
-    getCurrentLocation();
-    // Simulate driver movement
-    const interval = setInterval(() => {
-      simulateDriverMovement();
-    }, 3000);
+    if (!orderId) {
+      Alert.alert("Lỗi", "Không tìm thấy thông tin đơn hàng.");
+      navigation.goBack();
+      return;
+    }
 
-    return () => clearInterval(interval);
-  }, []);
-
-  const getCurrentLocation = async () => {
-    try {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          'Quyền truy cập vị trí',
-          'Ứng dụng cần quyền truy cập vị trí để theo dõi đơn hàng'
-        );
-        setLoading(false);
-        return;
-      }
-
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      const userLocation = {
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      };
-
-      setLocation(userLocation);
-      setDeliveryLocation(userLocation);
-      setLoading(false);
-
-      // Fit map to show all markers
-      if (mapRef.current) {
-        setTimeout(() => {
-          mapRef.current.fitToCoordinates(
-            [
-              restaurantLocation,
-              userLocation,
-              driverLocation,
-            ],
-            {
-              edgePadding: { top: 50, right: 50, bottom: 250, left: 50 },
-              animated: true,
+    
+    const unsubscribe = onSnapshot(
+      doc(db, "orders", orderId), 
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          setOrderData(data);
+          setLoading(false);
+          
+          // Cập nhật vị trí tài xế nếu có
+          if (data.driverLocation) {
+            setDriverLocation(data.driverLocation);
+          }
+          
+          // Tự động căn chỉnh bản đồ để thấy cả 2 điểm
+          if (mapRef.current && data.customerLocation) {
+            const coordinates = [restaurantLocation];
+            
+            // Thêm vị trí khách hàng
+            coordinates.push(data.customerLocation);
+            
+            // Thêm vị trí tài xế nếu có
+            if (data.driverLocation) {
+              coordinates.push(data.driverLocation);
             }
-          );
-        }, 500);
+            
+            mapRef.current.fitToCoordinates(coordinates, {
+              edgePadding: { top: 100, right: 50, bottom: 300, left: 50 },
+              animated: true,
+            });
+            
+            
+            if (doc.exists) {
+          const data = doc.data();
+          // Cập nhật lại vị trí từ database vào State
+          if (data.customerLocation) {
+            setRegion({
+              ...region,
+              latitude: data.customerLocation.latitude,
+              longitude: data.customerLocation.longitude,
+            });
+          }
+        }
+      
+            // Tính toán khoảng cách và thời gian ước tính
+            if (data.customerLocation) {
+              const targetLocation = data.status === 'delivering' && data.driverLocation 
+                ? data.driverLocation 
+                : restaurantLocation;
+              
+              calculateDistanceAndTime(targetLocation, data.customerLocation);
+            }
+          }
+        } else {
+          Alert.alert("Lỗi", "Không tìm thấy đơn hàng.");
+          setLoading(false);
+          navigation.goBack();
+        }
+      }, 
+      (error) => {
+        console.error("Firestore Error:", error);
+        Alert.alert("Lỗi", "Không thể kết nối đến cơ sở dữ liệu.");
+        setLoading(false);
       }
+    );
+
+    return () => unsubscribe();
+  }, [orderId]);
+
+  // Hàm tính khoảng cách giữa 2 điểm (theo công thức Haversine)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Bán kính Trái Đất (km)
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance;
+  };
+
+  // Hàm tính khoảng cách và thời gian ước tính
+  const calculateDistanceAndTime = (from, to) => {
+    const dist = calculateDistance(
+      from.latitude,
+      from.longitude,
+      to.latitude,
+      to.longitude
+    );
+    
+    setDistance(dist);
+    
+    // Giả sử tốc độ trung bình là 20 km/h trong thành phố
+    const avgSpeed = 20;
+    const time = (dist / avgSpeed) * 60; // Đổi sang phút
+    
+    setEstimatedTime(Math.ceil(time));
+  };
+
+  // Hàm gọi điện
+  const handleCall = () => {
+    if (orderData?.phone) {
+      Linking.openURL(`tel:${orderData.phone}`);
+    } else {
+      Alert.alert("Thông báo", "Số điện thoại không khả dụng");
+    }
+  };
+
+  // Hàm mở Google Maps để chỉ đường
+  const openMapsForDirections = () => {
+    if (!orderData?.customerLocation) {
+      Alert.alert("Thông báo", "Không có thông tin vị trí giao hàng");
+      return;
+    }
+
+    const { latitude, longitude } = orderData.customerLocation;
+    const label = "Điểm giao hàng";
+    
+    const scheme = Platform.select({
+      ios: 'maps:0,0?q=',
+      android: 'geo:0,0?q='
+    });
+    const latLng = `${latitude},${longitude}`;
+    const url = Platform.select({
+      ios: `${scheme}${label}@${latLng}`,
+      android: `${scheme}${latLng}(${label})`
+    });
+
+    Linking.openURL(url).catch(() => {
+      // Fallback sang Google Maps web nếu app không có
+      const webUrl = `https://www.google.com/maps/search/?api=1&query=${latLng}`;
+      Linking.openURL(webUrl);
+    });
+  };
+
+  // Hàm làm mới vị trí
+  const refreshLocation = async () => {
+    try {
+      setLoading(true);
+      
+      // Giả lập làm mới - trong thực tế bạn sẽ gọi API hoặc cập nhật Firestore
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      Alert.alert("Thành công", "Đã làm mới vị trí");
+      setLoading(false);
     } catch (error) {
-      console.error('Error getting location:', error);
-      Alert.alert('Lỗi', 'Không thể lấy vị trí hiện tại');
+      console.error("Error refreshing location:", error);
+      Alert.alert("Lỗi", "Không thể làm mới vị trí");
       setLoading(false);
     }
   };
 
-  const simulateDriverMovement = () => {
-    setDriverLocation(prev => ({
-      latitude: prev.latitude + (Math.random() - 0.5) * 0.002,
-      longitude: prev.longitude + (Math.random() - 0.5) * 0.002,
-    }));
-  };
-
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return (R * c).toFixed(1);
-  };
-
-  const getStatusInfo = () => {
-    switch (orderStatus) {
+  // Hàm lấy màu sắc theo trạng thái
+  const getStatusColor = (status) => {
+    switch (status) {
       case 'preparing':
-        return {
-          title: 'Đang chuẩn bị',
-          icon: 'restaurant-outline',
-          color: '#FFA500',
-          message: 'Nhà hàng đang chuẩn bị đơn hàng của bạn',
-        };
+        return '#FF9800';
       case 'delivering':
-        return {
-          title: 'Đang giao hàng',
-          icon: 'bicycle-outline',
-          color: '#4ECDC4',
-          message: 'Tài xế đang trên đường giao hàng',
-        };
-      case 'delivered':
-        return {
-          title: 'Đã giao hàng',
-          icon: 'checkmark-circle-outline',
-          color: '#2ECC71',
-          message: 'Đơn hàng đã được giao thành công',
-        };
+        return '#2196F3';
+      case 'completed':
+        return '#4CAF50';
+      case 'cancelled':
+        return '#F44336';
       default:
-        return {
-          title: 'Đang xử lý',
-          icon: 'time-outline',
-          color: '#95A5A6',
-          message: 'Đơn hàng đang được xử lý',
-        };
+        return '#9E9E9E';
     }
   };
 
-  const statusInfo = getStatusInfo();
+  // Hàm lấy text theo trạng thái
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'preparing':
+        return 'Đang chuẩn bị đồ uống';
+      case 'delivering':
+        return 'Tài xế đang giao hàng';
+      case 'completed':
+        return 'Đơn hàng đã hoàn tất';
+      case 'cancelled':
+        return 'Đơn hàng đã hủy';
+      default:
+        return 'Đang xử lý';
+    }
+  };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4b74ba" />
-        <Text style={styles.loadingText}>Đang tải bản đồ...</Text>
+        <ActivityIndicator size="large" color="#6F4E37" />
+        <Text style={styles.loadingText}>Đang lấy thông tin đơn hàng...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      
-      
-      {/* Map */}
+      {/* Map Section */}
       <MapView
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        initialRegion={location || restaurantLocation}
+        initialRegion={{
+          ...restaurantLocation,
+          latitudeDelta: 0.02,
+          longitudeDelta: 0.02,
+        }}
         showsUserLocation={true}
-        showsMyLocationButton={true}
+        showsMyLocationButton={false}
       >
         {/* Restaurant Marker */}
-        <Marker
-          coordinate={restaurantLocation}
-          title="Nhà hàng"
-          description="Vị trí nhà hàng"
+        <Marker 
+          coordinate={restaurantLocation} 
+          title="DrinkShop"
+          description="Cửa hàng"
         >
-          <View style={styles.markerContainer}>
-            <View style={[styles.marker, { backgroundColor: '#FF6B6B' }]}>
-              <Ionicons name="restaurant" size={24} color="#FFFFFF" />
-            </View>
+          <View style={[styles.marker, { backgroundColor: '#FF6B6B' }]}>
+            <Ionicons name="storefront" size={24} color="white" />
           </View>
         </Marker>
 
-        {/* Driver Marker */}
-        {orderStatus === 'delivering' && (
-          <Marker
-            coordinate={driverLocation}
-            title="Tài xế"
-            description="Vị trí tài xế"
-          >
-            <View style={styles.markerContainer}>
-              <View style={[styles.marker, { backgroundColor: '#4ECDC4' }]}>
-                <Ionicons name="bicycle" size={24} color="#FFFFFF" />
-              </View>
-            </View>
-          </Marker>
-        )}
-
-        {/* Delivery Location Marker */}
-        {deliveryLocation && (
-          <Marker
-            coordinate={deliveryLocation}
-            title="Điểm giao hàng"
-            description="Vị trí của bạn"
-          >
-            <View style={styles.markerContainer}>
-              <View style={[styles.marker, { backgroundColor: '#4b74ba' }]}>
-                <Ionicons name="home" size={24} color="#FFFFFF" />
-              </View>
-            </View>
-          </Marker>
-        )}
-
-        {/* Route Line */}
-        {deliveryLocation && orderStatus === 'delivering' && (
+        {/* Customer Location Marker */}
+        {orderData?.customerLocation && (
           <>
-            <Polyline
-              coordinates={[restaurantLocation, driverLocation]}
-              strokeColor="#4ECDC4"
-              strokeWidth={3}
-              lineDashPattern={[0]}
-            />
-            <Polyline
-              coordinates={[driverLocation, deliveryLocation]}
-              strokeColor="#95A5A6"
-              strokeWidth={3}
-              lineDashPattern={[10, 5]}
-            />
+            <Marker 
+              coordinate={orderData.customerLocation} 
+              title="Vị trí giao hàng"
+              description={orderData.address}
+            >
+              <View style={[styles.marker, { backgroundColor: '#4CAF50' }]}>
+                <Ionicons name="home" size={24} color="white" />
+              </View>
+            </Marker>
+            
+            {/* Vòng tròn hiển thị độ chính xác */}
+            {orderData.customerLocation.accuracy && (
+              <Circle
+                center={orderData.customerLocation}
+                radius={orderData.customerLocation.accuracy}
+                fillColor="rgba(76, 175, 80, 0.1)"
+                strokeColor="rgba(76, 175, 80, 0.3)"
+                strokeWidth={1}
+              />
+            )}
           </>
+        )}
+
+        {/* Driver Location Marker (nếu đang giao hàng) */}
+        {driverLocation && orderData?.status === 'delivering' && (
+          <Marker 
+            coordinate={driverLocation} 
+            title="Tài xế"
+            description="Đang trên đường giao hàng"
+          >
+            <View style={[styles.marker, { backgroundColor: '#2196F3' }]}>
+              <Ionicons name="bicycle" size={24} color="white" />
+            </View>
+          </Marker>
+        )}
+
+        {/* Đường đi từ nhà hàng đến khách hàng */}
+        {orderData?.customerLocation && (
+          <Polyline
+            coordinates={
+              driverLocation && orderData?.status === 'delivering'
+                ? [driverLocation, orderData.customerLocation]
+                : [restaurantLocation, orderData.customerLocation]
+            }
+            strokeColor={getStatusColor(orderData?.status)}
+            strokeWidth={4}
+            lineDashPattern={[10, 5]}
+          />
         )}
       </MapView>
 
+      {/* Floating Refresh Button */}
+      <TouchableOpacity 
+        style={styles.refreshButton}
+        onPress={refreshLocation}
+      >
+        <Ionicons name="refresh" size={24} color="#6F4E37" />
+      </TouchableOpacity>
+
+      {/* Floating Directions Button */}
+      {orderData?.customerLocation && (
+        <TouchableOpacity 
+          style={styles.directionsButton}
+          onPress={openMapsForDirections}
+        >
+          <Ionicons name="navigate" size={24} color="white" />
+        </TouchableOpacity>
+      )}
+
       {/* Bottom Info Card */}
       <View style={styles.bottomCard}>
-        {/* Status Header */}
-        <View style={styles.statusHeader}>
-          <View style={[styles.statusIcon, { backgroundColor: statusInfo.color + '20' }]}>
-            <Ionicons name={statusInfo.icon} size={28} color={statusInfo.color} />
+        {/* Status Section */}
+        <View style={styles.statusSection}>
+          <View style={[
+            styles.statusBadge, 
+            { backgroundColor: getStatusColor(orderData?.status) }
+          ]}>
+            <Ionicons 
+              name={
+                orderData?.status === 'preparing' ? 'time-outline' :
+                orderData?.status === 'delivering' ? 'bicycle-outline' :
+                orderData?.status === 'completed' ? 'checkmark-circle-outline' :
+                'close-circle-outline'
+              } 
+              size={20} 
+              color="white" 
+            />
+            <Text style={styles.statusBadgeText}>
+              {getStatusText(orderData?.status)}
+            </Text>
           </View>
-          <View style={styles.statusTextContainer}>
-            <Text style={styles.statusTitle}>{statusInfo.title}</Text>
-            <Text style={styles.statusMessage}>{statusInfo.message}</Text>
-          </View>
+          
+          <Text style={styles.orderIdText}>
+            Mã đơn: #{orderId.substring(0, 8).toUpperCase()}
+          </Text>
         </View>
 
-        {/* Order Details */}
-        <View style={styles.orderDetails}>
-          <View style={styles.detailRow}>
-            <Ionicons name="receipt-outline" size={20} color="#7F8C8D" />
-            <Text style={styles.detailLabel}>Mã đơn hàng:</Text>
-            <Text style={styles.detailValue}>#ORD12345</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Ionicons name="time-outline" size={20} color="#7F8C8D" />
-            <Text style={styles.detailLabel}>Thời gian dự kiến:</Text>
-            <Text style={styles.detailValue}>25-30 phút</Text>
-          </View>
-
-          {deliveryLocation && (
-            <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={20} color="#7F8C8D" />
-              <Text style={styles.detailLabel}>Khoảng cách:</Text>
-              <Text style={styles.detailValue}>
-                {calculateDistance(
-                  driverLocation.latitude,
-                  driverLocation.longitude,
-                  deliveryLocation.latitude,
-                  deliveryLocation.longitude
-                )}{' '}
-                km
+        {/* Distance and Time Info */}
+        {distance !== null && estimatedTime !== null && orderData?.status !== 'completed' && (
+          <View style={styles.infoSection}>
+            <View style={styles.infoItem}>
+              <Ionicons name="location-outline" size={20} color="#6F4E37" />
+              <Text style={styles.infoText}>
+                {distance < 1 
+                  ? `${(distance * 1000).toFixed(0)}m` 
+                  : `${distance.toFixed(1)}km`}
               </Text>
             </View>
-          )}
-        </View>
-
-        {/* Timeline */}
-        <View style={styles.timeline}>
-          <View style={styles.timelineItem}>
-            <View style={[styles.timelineDot, orderStatus !== 'preparing' && styles.timelineDotCompleted]}>
-              {orderStatus !== 'preparing' && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-            </View>
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineTitle}>Đã xác nhận</Text>
-              <Text style={styles.timelineTime}>14:30</Text>
+            
+            <View style={styles.infoDivider} />
+            
+            <View style={styles.infoItem}>
+              <Ionicons name="time-outline" size={20} color="#6F4E37" />
+              <Text style={styles.infoText}>
+                ~{estimatedTime} phút
+              </Text>
             </View>
           </View>
+        )}
 
-          <View style={[styles.timelineLine, orderStatus !== 'preparing' && styles.timelineLineCompleted]} />
-
-          <View style={styles.timelineItem}>
-            <View style={[
-              styles.timelineDot,
-              (orderStatus === 'delivering' || orderStatus === 'delivered') && styles.timelineDotCompleted
-            ]}>
-              {(orderStatus === 'delivering' || orderStatus === 'delivered') && (
-                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-              )}
-            </View>
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineTitle}>Đang giao</Text>
-              <Text style={styles.timelineTime}>14:45</Text>
-            </View>
-          </View>
-
-          <View style={[
-            styles.timelineLine,
-            orderStatus === 'delivered' && styles.timelineLineCompleted
-          ]} />
-
-          <View style={styles.timelineItem}>
-            <View style={[styles.timelineDot, orderStatus === 'delivered' && styles.timelineDotCompleted]}>
-              {orderStatus === 'delivered' && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
-            </View>
-            <View style={styles.timelineContent}>
-              <Text style={styles.timelineTitle}>Đã giao</Text>
-              <Text style={styles.timelineTime}>15:00</Text>
-            </View>
+        {/* Address Info */}
+        <View style={styles.infoRow}>
+          <Ionicons name="location" size={20} color="#7F8C8D" />
+          <View style={styles.addressContainer}>
+            <Text style={styles.addressLabel}>Địa chỉ giao hàng:</Text>
+            <Text style={styles.addressText} numberOfLines={2}>
+              {orderData?.address || "Chưa có địa chỉ"}
+            </Text>
           </View>
         </View>
+
+        {/* Location Status Warning */}
+        {!orderData?.customerLocation && (
+          <View style={styles.warningBox}>
+            <Ionicons name="warning-outline" size={20} color="#FF9800" />
+            <Text style={styles.warningText}>
+              Chưa có thông tin GPS. Tài xế sẽ liên hệ để xác nhận địa chỉ.
+            </Text>
+          </View>
+        )}
+
+        {/* Order Items Summary */}
+        {orderData?.items && orderData.items.length > 0 && (
+          <View style={styles.itemsSection}>
+            <Text style={styles.itemsSectionTitle}>Đồ uống đã đặt:</Text>
+            {orderData.items.map((item, index) => (
+              <View key={index} style={styles.itemRow}>
+                <Text style={styles.itemName}>
+                  {item.quantity}x {item.name}
+                </Text>
+                <Text style={styles.itemPrice}>
+                  {(item.price * item.quantity).toLocaleString()}đ
+                </Text>
+              </View>
+            ))}
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Tổng cộng:</Text>
+              <Text style={styles.totalValue}>
+                {orderData.total?.toLocaleString()}đ
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.callButton}>
-            <Ionicons name="call" size={20} color="#FFFFFF" />
-            <Text style={styles.callButtonText}>Gọi tài xế</Text>
+          <TouchableOpacity style={styles.callButton} onPress={handleCall}>
+            <Ionicons name="call" size={20} color="white" />
+            <Text style={styles.buttonText}>Gọi hỗ trợ</Text>
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.messageButton}
+          
+          <TouchableOpacity 
+            style={styles.msgButton} 
             onPress={() => navigation.navigate('Chatbot')}
           >
-            <Ionicons name="chatbubble-outline" size={20} color="#4b74ba" />
-            <Text style={styles.messageButtonText}>Nhắn tin</Text>
+            <Ionicons name="chatbubble-ellipses-outline" size={20} color="#6F4E37" />
+            <Text style={[styles.buttonText, { color: '#6F4E37' }]}>Nhắn tin</Text>
           </TouchableOpacity>
-        </View>
-
-        {/* Demo Controls */}
-        <View style={styles.demoControls}>
-          <Text style={styles.demoLabel}>Demo: Thay đổi trạng thái</Text>
-          <View style={styles.demoButtons}>
-            <TouchableOpacity
-              style={[styles.demoButton, { backgroundColor: '#FFA500' }]}
-              onPress={() => setOrderStatus('preparing')}
-            >
-              <Text style={styles.demoButtonText}>Chuẩn bị</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.demoButton, { backgroundColor: '#4ECDC4' }]}
-              onPress={() => setOrderStatus('delivering')}
-            >
-              <Text style={styles.demoButtonText}>Giao hàng</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.demoButton, { backgroundColor: '#2ECC71' }]}
-              onPress={() => setOrderStatus('delivered')}
-            >
-              <Text style={styles.demoButtonText}>Đã giao</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     </View>
@@ -385,36 +467,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#7F8C8D',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2C3E50',
-  },
   map: {
     width: width,
-    height: height * 0.4,
-  },
-  markerContainer: {
-    alignItems: 'center',
+    height: height * 0.45,
   },
   marker: {
     width: 50,
@@ -428,6 +483,38 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+    elevation: 5,
+  },
+  refreshButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  directionsButton: {
+    position: 'absolute',
+    top: 110,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#6F4E37',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
     elevation: 5,
   },
   bottomCard: {
@@ -444,166 +531,179 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  statusHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  statusSection: {
     marginBottom: 20,
   },
-  statusIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  statusTextContainer: {
-    flex: 1,
-  },
-  statusTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#2C3E50',
-    marginBottom: 4,
-  },
-  statusMessage: {
-    fontSize: 14,
-    color: '#7F8C8D',
-  },
-  orderDetails: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-  },
-  detailRow: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginBottom: 10,
   },
-  detailLabel: {
-    fontSize: 14,
-    color: '#7F8C8D',
+  statusBadgeText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
     marginLeft: 8,
-    flex: 1,
   },
-  detailValue: {
+  orderIdText: {
     fontSize: 14,
+    color: '#7F8C8D',
+    fontWeight: '500',
+  },
+  infoSection: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  infoText: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#2C3E50',
+    marginLeft: 8,
   },
-  timeline: {
-    marginBottom: 20,
+  infoDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E0E0E0',
   },
-  timelineItem: {
+  infoRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
   },
-  timelineDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#E8E8E8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  timelineDotCompleted: {
-    backgroundColor: '#4b74ba',
-  },
-  timelineContent: {
+  addressContainer: {
     flex: 1,
     marginLeft: 12,
-    paddingVertical: 4,
   },
-  timelineTitle: {
-    fontSize: 15,
+  addressLabel: {
+    fontSize: 12,
+    color: '#7F8C8D',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  addressText: {
+    fontSize: 14,
+    color: '#2C3E50',
+    lineHeight: 20,
+    fontWeight: '500',
+  },
+  warningBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  warningText: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 13,
+    color: '#F57C00',
+    lineHeight: 18,
+  },
+  itemsSection: {
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  itemsSectionTitle: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#2C3E50',
+    marginBottom: 12,
   },
-  timelineTime: {
-    fontSize: 13,
-    color: '#95A5A6',
-    marginTop: 2,
+  itemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  timelineLine: {
-    width: 2,
-    height: 30,
-    backgroundColor: '#E8E8E8',
-    marginLeft: 13,
+  itemName: {
+    fontSize: 14,
+    color: '#2C3E50',
+    flex: 1,
   },
-  timelineLineCompleted: {
-    backgroundColor: '#4b74ba',
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6F4E37',
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    marginTop: 8,
+    borderTopWidth: 2,
+    borderTopColor: '#6F4E37',
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  totalValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6F4E37',
   },
   actionButtons: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 20,
+    marginTop: 8,
   },
   callButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#4b74ba',
-    borderRadius: 16,
+    backgroundColor: '#6F4E37',
+    borderRadius: 12,
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4b74ba',
+    shadowColor: '#6F4E37',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
-  callButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  messageButton: {
+  msgButton: {
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 12,
     padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#4b74ba',
+    borderColor: '#6F4E37',
   },
-  messageButtonText: {
-    color: '#4b74ba',
-    fontSize: 16,
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 15,
     fontWeight: '600',
     marginLeft: 8,
-  },
-  demoControls: {
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  demoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#7F8C8D',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  demoButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  demoButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  demoButtonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '600',
   },
 });
 

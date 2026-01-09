@@ -165,7 +165,7 @@ const ProfileScreen = () => {
             </View>
             <View style={styles.loyaltyTextContainer}>
               <Text style={styles.loyaltyTitle}>Thẻ Thành Viên</Text>
-              <Text style={styles.loyaltyPoints}>150 điểm</Text>
+              <Text style={styles.loyaltyPoints}>{userData.coin || "Chưa cập nhật"} điểm</Text>
             </View>
           </View>
           <View style={styles.loyaltyCardRight}>

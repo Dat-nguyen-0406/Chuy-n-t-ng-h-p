@@ -65,6 +65,7 @@ const LoginScreen = ({ navigation }) => {
           email: foundUser.email,
           phone: foundUser.phone || "",
           address: foundUser.address || "",
+          coin: foundUser.coin || 0,
           role: foundUser.role,
         }));
 
